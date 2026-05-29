@@ -36,6 +36,7 @@ Intake Classifier responsibilities:
 - intent classification
 - emotional classification
 - route selection
+- no stage or stage-transition outputs
 
 Qualification Engine responsibilities:
 
@@ -47,6 +48,34 @@ Qualification Engine responsibilities:
 Status:
 
 Implemented
+
+---
+
+## Booking Ownership
+
+Decision:
+
+Booking Engine owns later booking lifecycle stages (`booking_requested`, `booked`).
+
+Qualification Engine may hand off to booking after `booking_intent`.
+
+Status:
+
+Planned
+
+---
+
+## Offer Eligibility
+
+Decision:
+
+Offer eligibility is determined by Google Sheets `offer_rules` and workflow logic.
+
+Qualification Engine may signal readiness, but it does not make final offer decisions.
+
+Status:
+
+Planned
 
 ---
 
@@ -97,6 +126,38 @@ It does not:
 Status:
 
 Implemented
+
+---
+
+## Offer Rules
+
+Decision:
+
+Offer eligibility and next-offer decisions must be defined in Google Sheets `offer_rules`.
+
+Qualification prompts may reference input values such as qualification depth, consultation readiness, and behavioral signals, but must not hardcode threshold logic.
+
+Status:
+
+Planned
+
+---
+
+## Booking Lifecycle
+
+Decision:
+
+Qualification Engine may hand off to the booking workflow once consultation readiness is confirmed.
+
+Booking lifecycle stages are:
+
+- booking_intent
+- booking_requested
+- booked
+
+Status:
+
+Planned
 
 ---
 
@@ -173,11 +234,27 @@ Medium
 
 Resolution:
 
-Move offer rules to Google Sheets.
+Move offer rules to Google Sheets and reference them from the qualification flow.
 
 Status:
 
 Planned
+
+---
+
+# Funnel Event Types
+
+Recommended event names:
+
+- stage_entered
+- qualification_completed
+- offer_shown
+- booking_requested
+- booked
+- followup_sent
+- reactivated
+
+These events should be captured in PostgreSQL `events` and not stored as analytics fields on `clients`.
 
 ---
 

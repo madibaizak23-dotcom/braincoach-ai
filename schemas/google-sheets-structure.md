@@ -34,6 +34,7 @@ Current Sheets:
 * keywords_master
 * qualification_flow
 * offers_master
+* offer_rules
 * followups_master
 * prompts_master
 * memory_signals
@@ -105,6 +106,8 @@ question
 emotional_goal
 insight_text
 transition_text
+transition_condition
+fallback_stage
 next_stage
 ```
 
@@ -113,6 +116,9 @@ Purpose:
 Controls multi-step qualification progression.
 
 The workflow should always read this sheet instead of hardcoding qualification logic.
+
+`transition_condition` defines rule-based requirements for moving to the next stage.
+`fallback_stage` defines the safe path when the user response does not match the expected qualification branch.
 
 ---
 
@@ -128,12 +134,44 @@ Fields:
 offer_id
 keyword
 offer_text
+offer_type
+priority
 CTA
 ```
 
 Purpose:
 
 Maps qualification topics to consultation offers.
+
+`offer_type` supports productized offer categories.
+`priority` supports offer selection when multiple matches exist.
+
+---
+
+# Sheet: offer_rules
+
+Purpose:
+
+Offer eligibility rules for the qualification and offer generation engines.
+
+Fields:
+
+```text
+rule_id
+keyword
+min_depth
+min_readiness
+required_signal
+offer_type
+priority
+```
+
+Purpose:
+
+Defines the conditions under which a given offer should be considered or presented.
+
+`required_signal` may reference emotional or behavioral signals from `memory_signals`.
+`min_depth` and `min_readiness` are evaluated at runtime by the qualification workflow.
 
 ---
 

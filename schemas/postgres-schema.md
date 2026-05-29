@@ -18,23 +18,21 @@ CREATE TABLE clients (
   telegram_user_id BIGINT UNIQUE NOT NULL,
   first_name VARCHAR(100),
   username VARCHAR(100),
-  current_stage VARCHAR(50),           -- new_lead, q1, q2, q3, offer_transition, offer, booking_intent, booked, followup, sleeping, reactivated
-  current_keyword VARCHAR(100), -- память, фокус, интеллект, состояние, система, архитектура, НИШ, ЕНТ
-qualification_depth INTEGER DEFAULT 0,    -- qualification progression step
-
-consultation_interest BOOLEAN DEFAULT FALSE, -- user expressed interest in consultation
-
-emotional_state VARCHAR(50), -- calm, excited, frustrated, uncertain, resistant, hopeful, overwhelmed
-
-emotional_intensity INTEGER DEFAULT 0, -- emotional engagement score (0-10)
-
-interaction_type VARCHAR(50), -- text, voice, mixed
-
-total_messages INTEGER DEFAULT 0,
+  current_stage VARCHAR(50),           -- new_lead, q1, q2, q3, offer_transition, offer, booking_intent, booking_requested, booked, followup, sleeping, reactivated
+  current_keyword VARCHAR(100),        -- память, фокус, интеллект, состояние, система, архитектура, НИШ, ЕНТ
+  qualification_depth INTEGER DEFAULT 0,    -- qualification progression step
+  consultation_interest BOOLEAN DEFAULT FALSE, -- user expressed interest in consultation
+  emotional_state VARCHAR(50), -- calm, excited, frustrated, uncertain, resistant, hopeful, overwhelmed
+  emotional_intensity INTEGER DEFAULT 0, -- emotional engagement score (0-10)
+  interaction_type VARCHAR(50), -- text, voice, mixed
+  total_messages INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   last_message_at TIMESTAMP
 );
+
+-- Stage transitions and funnel analytics are captured via PostgreSQL events.
+-- Recommended event_name values include: stage_entered, qualification_completed, offer_shown, booking_requested, booked, followup_sent, reactivated.
 
 CREATE INDEX idx_clients_telegram_id ON clients(telegram_user_id);
 CREATE INDEX idx_clients_current_stage ON clients(current_stage);

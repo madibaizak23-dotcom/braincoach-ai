@@ -29,7 +29,7 @@ Use available context from:
 * current message
 * conversation history
 * PostgreSQL memory
-* current_stage
+* current_stage (context only)
 * current_keyword
 * memory_signals
 * keywords_master
@@ -52,11 +52,9 @@ Determine:
 6. emotional_state
 7. emotional_intensity
 8. interaction_type
-9. current_stage
-10. recommended_stage
-11. qualification_readiness
-12. memory_candidates
-13. next_route
+9. qualification_readiness
+10. memory_candidates
+11. next_route
 
 ---
 
@@ -181,34 +179,6 @@ unknown
 
 ---
 
-# STAGE DETECTION
-
-Use current database state whenever available.
-
-Do not move stages unnecessarily.
-
-Available stages:
-
-* new_lead
-* q1
-* q2
-* q3
-* offer_transition
-* offer
-* booking_intent
-* booked
-* followup
-* sleeping
-* reactivated
-
-current_stage =
-current stage from PostgreSQL
-
-recommended_stage =
-next logical stage based on message content
-
----
-
 # QUALIFICATION READINESS
 
 Estimate:
@@ -275,8 +245,6 @@ Return JSON only.
 "emotional_state": "",
 "emotional_intensity": 0,
 "interaction_type": "",
-"current_stage": "",
-"recommended_stage": "",
 "qualification_readiness": 0,
 "memory_candidate": false,
 "memory_items": [],

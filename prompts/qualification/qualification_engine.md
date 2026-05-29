@@ -50,6 +50,7 @@ Use:
 * PostgreSQL state
 * qualification_flow
 * keywords_master
+* offer_rules
 
 Always follow qualification_flow whenever possible.
 
@@ -147,6 +148,18 @@ Example:
 
 ---
 
+Stage booking_intent
+
+Goal:
+
+Confirm the user's willingness to move toward booking and hand off to the booking workflow.
+
+Example:
+
+"Would you like me to help arrange a consultation now?"
+
+---
+
 # Qualification Depth
 
 Track qualification progression.
@@ -241,19 +254,13 @@ Ready for consultation.
 
 ---
 
-# Offer Readiness
+# Offer Qualification
 
-Offer readiness becomes TRUE only when:
+Offer eligibility should be evaluated using Google Sheets `offer_rules`.
 
-* qualification_depth >= 4
+Qualification Engine may use qualification_depth, consultation_readiness, emotional_driver, and other signal inputs, but it must not hardcode offer thresholds in prompt logic.
 
-AND
-
-* consultation_readiness >= 7
-
-AND
-
-* emotional_driver identified
+The engine should suggest the next qualification or offer transition based on `qualification_flow` and let the workflow consult `offer_rules` for offer selection.
 
 ---
 
@@ -285,7 +292,7 @@ Return JSON only.
 "emotional_driver_confirmed": "",
 "desired_outcome": "",
 "consultation_readiness": 0,
-"offer_ready": false,
+"offer_eligibility_signal": false,
 "next_question": "",
 "next_stage": "",
 "memory_updates": [],
