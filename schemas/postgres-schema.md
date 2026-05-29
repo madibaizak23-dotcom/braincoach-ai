@@ -1,5 +1,8 @@
 # PostgreSQL Schema
 
+Version: 1.1
+Last Updated: 2026-05-29
+
 **Database**: braincoach  
 **Purpose**: Source of truth for all user state and conversation history
 
@@ -16,13 +19,18 @@ CREATE TABLE clients (
   first_name VARCHAR(100),
   username VARCHAR(100),
   current_stage VARCHAR(50),           -- new_lead, q1, q2, q3, offer_transition, offer, booking_intent, booked, followup, sleeping, reactivated
-  current_keyword VARCHAR(100),        -- ai_learning, wellness, business_growth, career_transition
-  qualification_depth NUMERIC(3,1),    -- 0.0-100.0 (how deep in qualification process)
-  consultation_interest NUMERIC(3,2),  -- 0.00-1.00 (LLM prediction: 0=no interest, 1=ready to book)
-  emotional_state VARCHAR(50),         -- calm, excited, frustrated, uncertain, resistant, hopeful, overwhelmed
-  emotional_intensity NUMERIC(3,2),    -- 0.00-1.00 (strength of emotion)
-  interaction_type VARCHAR(50),        -- text, voice, forwarded
-  total_messages INTEGER DEFAULT 0,
+  current_keyword VARCHAR(100), -- память, фокус, интеллект, состояние, система, архитектура, НИШ, ЕНТ
+qualification_depth INTEGER DEFAULT 0,    -- qualification progression step
+
+consultation_interest BOOLEAN DEFAULT FALSE, -- user expressed interest in consultation
+
+emotional_state VARCHAR(50), -- calm, excited, frustrated, uncertain, resistant, hopeful, overwhelmed
+
+emotional_intensity INTEGER DEFAULT 0, -- emotional engagement score (0-10)
+
+interaction_type VARCHAR(50), -- text, voice, mixed
+
+total_messages INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   last_message_at TIMESTAMP
@@ -82,8 +90,50 @@ CREATE INDEX idx_events_user_id ON events(telegram_user_id);
 CREATE INDEX idx_events_event_name ON events(event_name);
 CREATE INDEX idx_events_created_at ON events(created_at DESC);
 ```
+---
+
+# Production vs Planned Architecture
+
+## Production Tables
+
+The following tables currently exist in the production PostgreSQL database and are actively used by BrainCoach AI:
+
+```text
+clients
+messages
+events
+memory_facts
+offers_and_outcomes
+```
+
+These tables are considered production-ready and form the current operational data layer.
 
 ---
+
+## Planned Tables
+
+The following tables are part of the target BrainCoach architecture and may not yet exist in the production database.
+
+They are documented here to define the future system design and implementation roadmap.
+
+```text
+offers_sent
+conversation_state
+memory_items
+user_profiles
+```
+
+These tables represent planned capabilities including:
+
+* advanced memory systems
+* cognitive profiling
+* offer analytics
+* conversational context management
+* personalization engines
+
+
+---
+
 
 ## Table: `offers_sent`
 
@@ -365,3 +415,28 @@ FROM clients;
 - **Point-in-time recovery**: 35 days retention
 - **Export to GCS**: Daily JSON export for audit
 
+# Source of Truth Rule
+
+PostgreSQL owns:
+
+- user state
+- conversation memory
+- stage progression
+- events
+
+Google Sheets owns:
+
+- qualification logic
+- offers
+- prompts
+- followups
+
+n8n owns:
+
+- orchestration
+
+AI models own:
+
+- generation only
+
+Business logic must never be stored inside prompts.
