@@ -12,7 +12,7 @@ User profiles and their current state in the system.
 ```sql
 CREATE TABLE clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id INTEGER UNIQUE NOT NULL,
+  telegram_user_id BIGINT UNIQUE NOT NULL,
   first_name VARCHAR(100),
   username VARCHAR(100),
   current_stage VARCHAR(50),           -- new_lead, q1, q2, q3, offer_transition, offer, booking_intent, booked, followup, sleeping, reactivated
@@ -42,7 +42,7 @@ Full conversation history.
 ```sql
 CREATE TABLE messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id INTEGER NOT NULL REFERENCES clients(telegram_user_id),
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   role VARCHAR(20) NOT NULL,           -- 'user' or 'assistant'
   content TEXT NOT NULL,
   model_used VARCHAR(100),             -- Gemini Flash, GPT Nano, GPT-5.5, etc
@@ -67,7 +67,7 @@ Audit trail of all system events.
 ```sql
 CREATE TABLE events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id INTEGER NOT NULL REFERENCES clients(telegram_user_id),
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   event_name VARCHAR(100) NOT NULL,    -- stage_transition, offer_sent, offer_accepted, message_sent, etc
   event_category VARCHAR(50),          -- classification, qualification, offer, engagement, reactivation
   old_stage VARCHAR(50),               -- previous stage (if transition)
@@ -92,7 +92,7 @@ Track all offers sent to users.
 ```sql
 CREATE TABLE offers_sent (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id INTEGER NOT NULL REFERENCES clients(telegram_user_id),
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   offer_id VARCHAR(100) NOT NULL,     -- references offers_master sheet
   keyword VARCHAR(100),
   offer_message TEXT,
@@ -116,7 +116,7 @@ Temporary conversation context (lives during active qualification flow).
 ```sql
 CREATE TABLE conversation_state (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id INTEGER NOT NULL REFERENCES clients(telegram_user_id) UNIQUE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) UNIQUE,
   current_q_number INTEGER,            -- which question in qualification (1, 2, 3)
   question_asked_at TIMESTAMP,
   expected_response_by TIMESTAMP,      -- timeout for response
@@ -128,6 +128,173 @@ CREATE TABLE conversation_state (
 
 CREATE INDEX idx_conv_state_user_id ON conversation_state(telegram_user_id);
 ```
+
+---
+
+# BrainCoach Cognitive Layer
+
+These tables support long-term memory, user profiling, and personalized responses.
+
+---
+
+## Table: `memory_items`
+
+Long-term memory extracted from conversations.
+
+```sql
+CREATE TABLE memory_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
+
+  memory_type VARCHAR(50) NOT NULL,
+  memory_category VARCHAR(50),
+
+  memory_content TEXT NOT NULL,
+
+  confidence NUMERIC(3,2),
+
+  source VARCHAR(50),                 -- intake, qualification, memory_extractor
+
+  first_observed_at TIMESTAMP DEFAULT NOW(),
+  last_confirmed_at TIMESTAMP DEFAULT NOW(),
+
+  observation_count INTEGER DEFAULT 1,
+
+  is_active BOOLEAN DEFAULT TRUE,
+
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_memory_user
+ON memory_items(telegram_user_id);
+
+CREATE INDEX idx_memory_type
+ON memory_items(memory_type);
+
+CREATE INDEX idx_memory_active
+ON memory_items(is_active);
+CREATE UNIQUE INDEX idx_memory_unique
+ON memory_items(
+  telegram_user_id,
+  memory_type,
+  memory_content);
+```
+
+### Memory Types
+
+Examples:
+
+```text
+goal
+interest
+challenge
+strength
+preference
+project
+habit
+motivation
+learning_pattern
+decision_pattern
+```
+
+---
+
+## Table: `user_profiles`
+
+Aggregated cognitive profile generated from memory.
+
+```sql
+CREATE TABLE user_profiles (
+
+  telegram_user_id BIGINT PRIMARY KEY
+  REFERENCES clients(telegram_user_id),
+
+  profile_version INTEGER DEFAULT 1,
+
+  primary_interests JSONB,
+
+  long_term_goals JSONB,
+
+  decision_style VARCHAR(50),
+
+  learning_style VARCHAR(50),
+
+  motivation_drivers JSONB,
+
+  strengths JSONB,
+
+  recurring_challenges JSONB,
+
+  preferred_response_style VARCHAR(50),
+
+  profile_confidence NUMERIC(3,2),
+
+  last_profile_update TIMESTAMP DEFAULT NOW(),
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_profile_decision_style
+ON user_profiles(decision_style);
+
+CREATE INDEX idx_profile_learning_style
+ON user_profiles(learning_style);
+CREATE INDEX idx_profile_updated
+ON user_profiles(last_profile_update DESC);
+```
+
+---
+
+## Cognitive Data Lifecycle
+
+1. Conversation message received
+2. Intake classifier analyzes context
+3. Qualification engine identifies patterns
+4. Memory extractor proposes memory candidates
+5. Memory updater creates or updates memory_items
+6. Profile builder updates user_profiles
+7. Response generator uses user_profiles for personalization
+
+---
+
+## Example Memory Flow
+
+User says:
+
+```text
+I want to build an AI business but keep postponing execution.
+```
+
+Memory Item:
+
+```json
+{
+  "memory_type": "goal",
+  "memory_content": "Build an AI business"
+}
+```
+
+Memory Item:
+
+```json
+{
+  "memory_type": "challenge",
+  "memory_content": "Recurring procrastination during execution"
+}
+```
+
+Profile Update:
+
+```json
+{
+  "primary_interests": ["AI", "Business"],
+  "long_term_goals": ["Build an AI business"],
+  "recurring_challenges": ["procrastination"]
+}
+```
+
 
 ---
 
