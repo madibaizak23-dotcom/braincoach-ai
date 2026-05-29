@@ -1,0 +1,11 @@
+{
+  "name": "BrainCoach - Reactivation Engine",
+  "description": "Переактивация неактивных пользователей через целевые сообщения",
+  "version": "1.0",
+  "nodes": [],
+  "connections": {},
+  "active": false,
+  "settings": {
+    "timezone": "Europe/Moscow"
+  }
+}

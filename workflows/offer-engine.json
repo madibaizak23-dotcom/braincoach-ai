@@ -1,0 +1,11 @@
+{
+  "name": "BrainCoach - Offer Engine",
+  "description": "Генерация и отправка персонализированных предложений",
+  "version": "1.0",
+  "nodes": [],
+  "connections": {},
+  "active": false,
+  "settings": {
+    "timezone": "Europe/Moscow"
+  }
+}
