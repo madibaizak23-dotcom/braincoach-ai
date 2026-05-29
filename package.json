@@ -1,0 +1,30 @@
+{
+  "name": "braincoach-ai",
+  "version": "1.0.0",
+  "description": "BrainCoach AI - Telegram bot with voice intake, qualification, and reactivation engines",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node scripts/deploy-workflow.js",
+    "deploy:all": "node scripts/deploy-workflow.js all",
+    "update": "node scripts/update-workflow.js",
+    "backup": "node scripts/backup-workflows.js",
+    "backup:list": "node scripts/backup-workflows.js --list",
+    "test": "echo 'Tests not yet implemented'"
+  },
+  "keywords": [
+    "n8n",
+    "telegram",
+    "ai",
+    "automation",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
