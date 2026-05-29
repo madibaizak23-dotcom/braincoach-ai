@@ -415,3 +415,33 @@ Not Started
 
 memory_engine.md
 Not Started
+
+## Future Model Optimization
+
+Current:
+
+Gemini Flash
+→ Classification
+
+GPT Nano
+→ Qualification
+
+Premium Models
+→ Offer / Conversion
+
+Future evaluation:
+
+Compare:
+
+- GPT-5 Nano
+- GPT-5 Mini
+- Gemini Flash
+
+on:
+
+- classification accuracy
+- qualification quality
+- token cost
+- latency
+
+Decision deferred until production traffic exists.
