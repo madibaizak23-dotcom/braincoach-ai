@@ -1,5 +1,28 @@
 # BrainCoach AI Project Journal
 
+## 2026-05-31
+
+Architecture Foundation Completed
+
+Artifacts created:
+
+- tooling-playbook.md
+- customer-intelligence-platform-v1.md
+- rag-architecture-v1.md
+- n8n-v2-deployment-plan.md
+
+Key decisions:
+
+- PostgreSQL remains operational source of truth
+- n8n-prod remains stable legacy production
+- n8n-v2 becomes next-generation platform
+- BrainCoach architecture organized around:
+  Signals → Memory → Understanding → Prediction → Influence → Action
+
+Next milestone:
+
+Deploy n8n-v2 and begin Memory Engine design.
+
 ## 2026-05-30
 
 ### Milestone
