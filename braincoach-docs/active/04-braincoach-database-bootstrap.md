@@ -1,92 +1,241 @@
 # BrainCoach Database Bootstrap
 
-Last Updated: 2026-05-30
-
-## Problem
-
-The n8n Postgres credential currently points at database **`n8n`**, which only contains n8n internal tables (`workflow_entity`, `execution_entity`, `credentials_entity`, …).
-
-BrainCoach application tables (`clients`, `events`, etc.) **do not exist** there. Workflows fail at the first Postgres node because `clients` is missing.
-
-**Fix (infrastructure):** Use a dedicated database (documented name: **`braincoach`**) for BrainCoach data. Do not run this migration on the `n8n` system database.
+**Status:** ACTIVE  
+**Last Updated:** 2026-05-31  
+**Responsibility:** Canonical PostgreSQL bootstrap for BrainCoach application data only.
 
 ---
 
-## Required tables (inventory)
+## Purpose
 
-Sources: `schemas/postgres-schema.md`, `src/postgres/initDatabase.js`, `src/postgres/memoryRepository.js`, `src/postgres/profileRepository.js`, `workflows/BrainCoach_qualification_engine.json`.
+This document defines the canonical SQL required to create the BrainCoach application database schema.
 
-| Table | Tier | Source | Used by |
-|-------|------|--------|---------|
-| `clients` | **P0 — required now** | `postgres-schema.md` | Qualification workflow (SELECT/INSERT/UPDATE) |
-| `events` | **P0 — required now** | `postgres-schema.md` | Qualification workflow (INSERT) |
-| `messages` | P1 — core production | `postgres-schema.md` | Architecture / prompts (not in workflow JSON yet) |
-| `memory_facts` | P1 — production (no DDL in repo) | `postgres-schema.md`, `README.md` | Personalization layer (inferred DDL below) |
-| `offers_and_outcomes` | P1 — production (no DDL in repo) | `postgres-schema.md`, `README.md` | Offer analytics (inferred DDL below) |
-| `memory_items` | P2 — app + planned | `postgres-schema.md`, `initDatabase.js`, `memoryRepository.js` | Node.js memory layer |
-| `user_profiles` | P2 — app + planned | `postgres-schema.md`, `initDatabase.js`, `profileRepository.js` | Node.js profile layer |
-| `offers_sent` | P2 — planned | `postgres-schema.md` | Offer engine (future) |
-| `conversation_state` | P2 — planned | `postgres-schema.md` | In-flow qualification context (future) |
+It owns:
 
-**Minimum to unblock qualification workflow:** `clients`, `events` only.
-
-**Full bootstrap (recommended):** all tables below in one migration.
+- database target rules
+- migration safety guardrails
+- table creation order
+- all BrainCoach table definitions
+- indexes
+- foreign keys
+- analytics views
+- verification queries
+- database smoke tests
 
 ---
 
-## Creation order
+## Source Of Truth Status
+
+This file is the canonical bootstrap document for BrainCoach PostgreSQL application tables.
+
+Schema sources used:
+
+- `schemas/postgres-schema.md`
+- `braincoach-docs/postgres-table-inventory.md`
+- `src/postgres/initDatabase.js`
+- `braincoach-docs/active/canonical-workflows.md`
+- `braincoach-docs/active/memory-engine-v1-design.md`
+- `braincoach-docs/active/n8n-v2-status.md`
+
+If this file conflicts with `schemas/postgres-schema.md`, verify against repository code and active workflow requirements before running migrations.
+
+---
+
+## Database Architecture
+
+BrainCoach application data uses two dedicated PostgreSQL databases:
+
+| Environment | Database | Purpose |
+|---|---|---|
+| Development / n8n-v2 | `braincoach_dev` | Development, workflow validation, Memory Engine v1 work |
+| Production | `braincoach_prod` | Production BrainCoach application data |
+
+Development workflows must connect to `braincoach_dev`.
+
+Production workflows must connect to `braincoach_prod`.
+
+---
+
+## Forbidden Targets
+
+Never run BrainCoach application migrations against:
+
+- `n8n`
+- `n8n_db`
+
+Those databases are not BrainCoach application databases.
+
+If `current_database()` returns `n8n` or `n8n_db`, stop immediately.
+
+---
+
+## Required Tables
+
+The canonical bootstrap creates 9 BrainCoach tables.
+
+| Table | Status | Source | Current usage |
+|---|---|---|---|
+| `clients` | Required now | `schemas/postgres-schema.md` | Intake Engine client lookup/create/update |
+| `messages` | Core production data | `schemas/postgres-schema.md` | Conversation history; not yet written by stable workflow |
+| `events` | Required now | `schemas/postgres-schema.md` | Intake Engine event insert |
+| `memory_facts` | Production documented | table inventory / repository docs | Personalization facts; no workflow node yet |
+| `offers_and_outcomes` | Production documented | table inventory / repository docs | Offer analytics; no workflow node yet |
+| `offers_sent` | Planned | `schemas/postgres-schema.md` | Offer Engine future table |
+| `conversation_state` | Planned | `schemas/postgres-schema.md` | Qualification context future table |
+| `memory_items` | Memory Engine v1 | `schemas/postgres-schema.md`, `src/postgres/initDatabase.js` | Memory repository |
+| `user_profiles` | Memory Engine v1 | `schemas/postgres-schema.md`, `src/postgres/initDatabase.js` | Profile repository |
+
+Minimum tables required by Intake Engine v1 Stable:
+
+- `clients`
+- `events`
+
+Full bootstrap target:
+
+- all 9 tables
+
+---
+
+## Workflow Dependencies
+
+The canonical workflow is:
+
+```text
+workflows/reference-node-exports/intake-engine-v1-stable.json
+```
+
+PostgreSQL tables used by the stable workflow:
+
+| Workflow node | SQL operation | Table |
+|---|---|---|
+| `Postgres - Find Client` | `SELECT` | `clients` |
+| `Postgres - Create Client` | `INSERT` | `clients` |
+| `Postgres - Update Client` | `UPDATE` | `clients` |
+| `Postgres - Insert Event` | `INSERT` | `events` |
+
+Memory Engine v1 repository code uses:
+
+| Repository | Tables |
+|---|---|
+| `src/postgres/memoryRepository.js` | `memory_items` |
+| `src/postgres/profileRepository.js` | `user_profiles` |
+| `src/postgres/initDatabase.js` | creates only `memory_items` and `user_profiles` |
+
+`src/postgres/initDatabase.js` is not a full BrainCoach bootstrap. It does not create `clients`, `messages`, `events`, `memory_facts`, `offers_and_outcomes`, `offers_sent`, or `conversation_state`.
+
+---
+
+## Execution Order
 
 Foreign keys require `clients` first.
 
 ```text
-1. CREATE EXTENSION pgcrypto
-2. clients                    (parent)
-3. messages                   → clients(telegram_user_id)
-4. events                     → clients(telegram_user_id)
-5. memory_facts               → clients(telegram_user_id)
-6. offers_and_outcomes        → clients(telegram_user_id)
-7. offers_sent                → clients(telegram_user_id)
-8. conversation_state         → clients(telegram_user_id)
-9. memory_items               → clients(telegram_user_id)
-10. user_profiles             → clients(telegram_user_id)
-11. indexes (non-FK)
-12. optional views
+1. Create target database if needed
+2. Connect to target database
+3. Run guardrail query
+4. CREATE EXTENSION pgcrypto
+5. clients
+6. messages
+7. events
+8. memory_facts
+9. offers_and_outcomes
+10. offers_sent
+11. conversation_state
+12. memory_items
+13. user_profiles
+14. indexes
+15. analytics views
+16. verification queries
+17. smoke test
 ```
 
 ---
 
-## Pre-flight
+## Pre-flight Database Creation
+
+Run only from a PostgreSQL admin connection.
+
+### Development
 
 ```sql
--- Connect to Postgres as superuser or DB owner, then:
-CREATE DATABASE braincoach
+CREATE DATABASE braincoach_dev
   ENCODING 'UTF8'
   LC_COLLATE 'en_US.UTF-8'
   LC_CTYPE 'en_US.UTF-8'
   TEMPLATE template0;
-
--- Connect to braincoach (NOT n8n):
-\c braincoach
 ```
 
-Update n8n credential **Postgres account** → database = `braincoach` (or set `DB_NAME=braincoach` for `src/postgres/initDatabase.js`).
+### Production
+
+```sql
+CREATE DATABASE braincoach_prod
+  ENCODING 'UTF8'
+  LC_COLLATE 'en_US.UTF-8'
+  LC_CTYPE 'en_US.UTF-8'
+  TEMPLATE template0;
+```
 
 ---
 
-## Migration SQL (run on `braincoach`)
+## Connect To Target Database
 
-Copy and execute as a single script on the **braincoach** database.
+### Development
+
+```sql
+\c braincoach_dev
+```
+
+### Production
+
+```sql
+\c braincoach_prod
+```
+
+---
+
+## Safety Guardrails
+
+Run before executing the bootstrap SQL.
+
+```sql
+SELECT current_database();
+```
+
+Allowed results:
+
+- `braincoach_dev`
+- `braincoach_prod`
+
+Forbidden results:
+
+- `n8n`
+- `n8n_db`
+
+Stop immediately if the connected database is not an allowed target.
+
+For today's n8n-v2 development workflow, the expected target is:
+
+```text
+braincoach_dev
+```
+
+---
+
+## Bootstrap SQL
+
+Run this script only after connecting to `braincoach_dev` or `braincoach_prod`.
 
 ```sql
 -- ============================================================
--- BrainCoach AI — bootstrap migration
--- Target database: braincoach (NOT n8n)
+-- BrainCoach AI bootstrap migration
+-- Target database: braincoach_dev or braincoach_prod
+-- Forbidden targets: n8n, n8n_db
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ------------------------------------------------------------
--- 1. clients (parent)
+-- 1. clients
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,7 +267,7 @@ CREATE INDEX IF NOT EXISTS idx_clients_last_message ON clients(last_message_at)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   role VARCHAR(20) NOT NULL,
   content TEXT NOT NULL,
   model_used VARCHAR(100),
@@ -138,7 +287,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_user_recent ON messages(telegram_user_id
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   event_name VARCHAR(100) NOT NULL,
   event_category VARCHAR(50),
   old_stage VARCHAR(50),
@@ -155,11 +304,11 @@ CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_events_category_created ON events(event_category, created_at DESC);
 
 -- ------------------------------------------------------------
--- 4. memory_facts (inferred — README fields; no CREATE in repo)
+-- 4. memory_facts
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS memory_facts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   signal_type VARCHAR(100) NOT NULL,
   meaning TEXT,
   severity VARCHAR(50),
@@ -172,11 +321,11 @@ CREATE INDEX IF NOT EXISTS idx_memory_facts_user ON memory_facts(telegram_user_i
 CREATE INDEX IF NOT EXISTS idx_memory_facts_signal ON memory_facts(signal_type);
 
 -- ------------------------------------------------------------
--- 5. offers_and_outcomes (inferred — README fields; no CREATE in repo)
+-- 5. offers_and_outcomes
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS offers_and_outcomes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   offers TEXT,
   responses TEXT,
   outcomes TEXT,
@@ -192,7 +341,7 @@ CREATE INDEX IF NOT EXISTS idx_offers_outcomes_user ON offers_and_outcomes(teleg
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS offers_sent (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   offer_id VARCHAR(100) NOT NULL,
   keyword VARCHAR(100),
   offer_message TEXT,
@@ -211,7 +360,7 @@ CREATE INDEX IF NOT EXISTS idx_offers_sent_status ON offers_sent(status);
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS conversation_state (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL UNIQUE REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) UNIQUE,
   current_q_number INTEGER,
   question_asked_at TIMESTAMP,
   expected_response_by TIMESTAMP,
@@ -224,11 +373,11 @@ CREATE TABLE IF NOT EXISTS conversation_state (
 CREATE INDEX IF NOT EXISTS idx_conv_state_user_id ON conversation_state(telegram_user_id);
 
 -- ------------------------------------------------------------
--- 8. memory_items (matches initDatabase.js + schema FK)
+-- 8. memory_items
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS memory_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT NOT NULL REFERENCES clients(telegram_user_id),
   memory_type VARCHAR(50) NOT NULL,
   memory_category VARCHAR(50),
   memory_content TEXT NOT NULL,
@@ -252,10 +401,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_unique ON memory_items(
 );
 
 -- ------------------------------------------------------------
--- 9. user_profiles (matches initDatabase.js + schema FK)
+-- 9. user_profiles
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_profiles (
-  telegram_user_id BIGINT PRIMARY KEY REFERENCES clients(telegram_user_id) ON DELETE CASCADE,
+  telegram_user_id BIGINT PRIMARY KEY REFERENCES clients(telegram_user_id),
   profile_version INTEGER DEFAULT 1,
   primary_interests JSONB,
   long_term_goals JSONB,
@@ -277,9 +426,9 @@ CREATE INDEX IF NOT EXISTS idx_profile_updated ON user_profiles(last_profile_upd
 
 ---
 
-## Optional analytics views
+## Analytics Views
 
-From `schemas/postgres-schema.md` (run after tables exist):
+Run after all tables exist.
 
 ```sql
 CREATE OR REPLACE VIEW v_users_by_stage AS
@@ -304,48 +453,365 @@ FROM clients;
 
 ---
 
-## Verification
+## Verification Queries
 
-Run on **`braincoach`** (not `n8n`):
+Run all verification queries on the target database after bootstrap.
+
+### Confirm Target Database
+
+```sql
+SELECT current_database();
+```
+
+Expected:
+
+- `braincoach_dev`
+- `braincoach_prod`
+
+Forbidden:
+
+- `n8n`
+- `n8n_db`
+
+### Confirm Extension
+
+```sql
+SELECT extname
+FROM pg_extension
+WHERE extname = 'pgcrypto';
+```
+
+Expected:
+
+```text
+pgcrypto
+```
+
+### Confirm Tables
 
 ```sql
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE'
   AND table_name IN (
-    'clients', 'messages', 'events', 'memory_facts', 'offers_and_outcomes',
-    'offers_sent', 'conversation_state', 'memory_items', 'user_profiles'
+    'clients',
+    'messages',
+    'events',
+    'memory_facts',
+    'offers_and_outcomes',
+    'offers_sent',
+    'conversation_state',
+    'memory_items',
+    'user_profiles'
   )
 ORDER BY table_name;
 ```
 
-Expected: **9 rows**.
+Expected: 9 rows.
 
-Quick workflow smoke test:
+Expected table names:
+
+```text
+clients
+conversation_state
+events
+memory_facts
+memory_items
+messages
+offers_and_outcomes
+offers_sent
+user_profiles
+```
+
+### Confirm Indexes
 
 ```sql
-INSERT INTO clients (telegram_user_id, current_stage, total_messages)
-VALUES (999999001, 'new_lead', 0)
-ON CONFLICT (telegram_user_id) DO NOTHING;
+SELECT indexname
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname IN (
+    'idx_clients_telegram_id',
+    'idx_clients_current_stage',
+    'idx_clients_keyword',
+    'idx_clients_stage_keyword',
+    'idx_clients_last_message',
+    'idx_messages_user_id',
+    'idx_messages_created_at',
+    'idx_messages_user_recent',
+    'idx_events_user_id',
+    'idx_events_event_name',
+    'idx_events_created_at',
+    'idx_events_category_created',
+    'idx_memory_facts_user',
+    'idx_memory_facts_signal',
+    'idx_offers_outcomes_user',
+    'idx_offers_sent_user_id',
+    'idx_offers_sent_status',
+    'idx_conv_state_user_id',
+    'idx_memory_user',
+    'idx_memory_type',
+    'idx_memory_active',
+    'idx_memory_unique',
+    'idx_profile_decision_style',
+    'idx_profile_learning_style',
+    'idx_profile_updated'
+  )
+ORDER BY indexname;
+```
 
-SELECT * FROM clients WHERE telegram_user_id = 999999001;
+Expected: 25 rows.
+
+### Confirm Foreign Keys
+
+```sql
+SELECT
+  tc.table_name,
+  kcu.column_name,
+  ccu.table_name AS foreign_table_name,
+  ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+  ON tc.constraint_name = kcu.constraint_name
+ AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage AS ccu
+  ON ccu.constraint_name = tc.constraint_name
+ AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_schema = 'public'
+ORDER BY tc.table_name, kcu.column_name;
+```
+
+Expected foreign-key child tables:
+
+```text
+conversation_state
+events
+memory_facts
+memory_items
+messages
+offers_and_outcomes
+offers_sent
+user_profiles
+```
+
+All foreign keys should reference:
+
+```text
+clients.telegram_user_id
+```
+
+### Confirm Views
+
+```sql
+SELECT table_name
+FROM information_schema.views
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'v_users_by_stage',
+    'v_qualification_funnel'
+  )
+ORDER BY table_name;
+```
+
+Expected: 2 rows.
+
+Expected view names:
+
+```text
+v_qualification_funnel
+v_users_by_stage
 ```
 
 ---
 
-## Notes
+## Smoke Tests
 
-| Topic | Detail |
-|-------|--------|
-| `initDatabase.js` | Creates only `memory_items` + `user_profiles`; no FK to `clients`; **does not** create P0 tables. Use this migration instead. |
-| `memory_facts` / `offers_and_outcomes` | Listed as production in schema doc but no `CREATE TABLE` in repo; DDL here is **inferred** from `README.md` field lists. Adjust if production DB differs. |
-| `ON DELETE CASCADE` | Added on child FKs for clean user removal; not in original schema text. |
-| n8n DB | Never migrate BrainCoach tables into `n8n` — keeps app data separate from n8n internals. |
+Run smoke tests in `braincoach_dev` first.
+
+Do not run production smoke tests against `braincoach_prod` unless explicitly approved.
+
+### Smoke Test 1: Client Insert
+
+```sql
+INSERT INTO clients (
+  telegram_user_id,
+  first_name,
+  username,
+  current_stage,
+  current_keyword,
+  total_messages
+)
+VALUES (
+  999999001,
+  'bootstrap_test',
+  'bootstrap_test_user',
+  'new_lead',
+  'test',
+  0
+)
+ON CONFLICT (telegram_user_id) DO NOTHING;
+
+SELECT *
+FROM clients
+WHERE telegram_user_id = 999999001;
+```
+
+Expected:
+
+- 1 row returned from `clients`
+- `current_stage = 'new_lead'`
+
+### Smoke Test 2: Event Insert
+
+```sql
+INSERT INTO events (
+  telegram_user_id,
+  event_name,
+  event_category,
+  old_stage,
+  new_stage,
+  keyword,
+  model_used,
+  metadata
+)
+VALUES (
+  999999001,
+  'bootstrap_smoke_test',
+  'database',
+  NULL,
+  'new_lead',
+  'test',
+  'manual',
+  '{"source":"bootstrap"}'::jsonb
+)
+RETURNING *;
+```
+
+Expected:
+
+- 1 row returned from `events`
+- `telegram_user_id = 999999001`
+
+### Smoke Test 3: Memory Insert
+
+```sql
+INSERT INTO memory_items (
+  telegram_user_id,
+  memory_type,
+  memory_category,
+  memory_content,
+  confidence,
+  source
+)
+VALUES (
+  999999001,
+  'goal',
+  'test',
+  'Bootstrap smoke test memory',
+  0.80,
+  'bootstrap'
+)
+ON CONFLICT (telegram_user_id, memory_type, memory_content) DO NOTHING
+RETURNING *;
+```
+
+Expected:
+
+- 0 or 1 row returned depending on whether the smoke test was already run
+- no uncontrolled duplicate rows
+
+### Smoke Test 4: Profile Insert
+
+```sql
+INSERT INTO user_profiles (
+  telegram_user_id,
+  primary_interests,
+  long_term_goals,
+  profile_confidence
+)
+VALUES (
+  999999001,
+  '["bootstrap"]'::jsonb,
+  '["verify database"]'::jsonb,
+  0.50
+)
+ON CONFLICT (telegram_user_id) DO NOTHING
+RETURNING *;
+```
+
+Expected:
+
+- 0 or 1 row returned depending on whether the smoke test was already run
+- no primary-key conflict error
+
+### Smoke Test 5: Analytics Views
+
+```sql
+SELECT *
+FROM v_users_by_stage
+WHERE current_stage = 'new_lead';
+
+SELECT *
+FROM v_qualification_funnel;
+```
+
+Expected:
+
+- both queries execute without error
+
+### Smoke Test Cleanup
+
+Run only after smoke tests complete.
+
+```sql
+DELETE FROM user_profiles
+WHERE telegram_user_id = 999999001;
+
+DELETE FROM memory_items
+WHERE telegram_user_id = 999999001;
+
+DELETE FROM events
+WHERE telegram_user_id = 999999001;
+
+DELETE FROM clients
+WHERE telegram_user_id = 999999001;
+```
+
+Expected:
+
+- smoke-test records removed
+- no production user data affected
 
 ---
 
-## Related documents
+## Production Safety Notes
 
-- `schemas/postgres-schema.md` — canonical field definitions
-- `braincoach-docs/postgres-table-inventory.md` — table usage map
-- `braincoach-docs/workflow-repair-checklist.md` — workflow SQL after DB exists
+For development implementation sessions:
+
+- use `braincoach_dev`
+- do not modify `braincoach_prod`
+- do not modify `n8n`
+- do not modify `n8n_db`
+
+For production bootstrap or migration:
+
+- require explicit production approval
+- verify current database before every migration
+- run verification queries before enabling workflows
+- run smoke tests only with an approved production test user
+
+---
+
+## Completion Criteria
+
+Database bootstrap is complete when:
+
+1. `current_database()` returns the intended target.
+2. `pgcrypto` exists.
+3. All 9 BrainCoach tables exist.
+4. All expected indexes exist.
+5. All child tables have foreign keys to `clients.telegram_user_id`.
+6. Both analytics views exist.
+7. Smoke test inserts, reads, view queries, and cleanup pass.
+8. The canonical workflow can access `clients` and `events`.
