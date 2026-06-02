@@ -1,11 +1,280 @@
 {
-  "name": "BrainCoach - Reactivation Engine",
-  "description": "Переактивация неактивных пользователей через целевые сообщения",
-  "version": "1.0",
-  "nodes": [],
-  "connections": {},
-  "active": false,
+  "name": "BrainCoach - WF-06: TIMEOUT WATCHDOG",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1500,
+        -200
+      ],
+      "id": "e026fd27-d29e-42af-9767-803bb0163abc"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{\n`\nSELECT \n  c.telegram_user_id,\n  c.first_name,\n  c.username,\n  c.current_stage,\n  c.current_keyword,\n  c.last_message_at,\n  c.last_nudge_sent_at,\n  cs.sub_stage,\n  cs.pattern_type\nFROM clients c\nLEFT JOIN conversation_state cs ON c.telegram_user_id = cs.telegram_user_id\nWHERE c.allow_reminders = true\n  AND c.last_message_at < NOW() - INTERVAL '24 hours'\n  AND (c.last_nudge_sent_at IS NULL OR c.last_nudge_sent_at < NOW() - INTERVAL '24 hours')\n  AND c.current_stage IN ('q1', 'q2', 'q3', 'offer', 'offer_transition');\n`\n}}",
+        "additionalFields": {}
+      },
+      "name": "Postgres - Get Stuck Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        -200
+      ],
+      "id": "c1f374ec-68e6-4ca4-8f01-6cfdc22bbb88",
+      "credentials": {
+        "postgres": {
+          "id": "Fy1RKV6DluFbarlm",
+          "name": "Postgres account "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.telegram_user_id }}",
+              "value2": ""
+            }
+          ]
+        }
+      },
+      "name": "IF - Stuck Users Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1060,
+        -200
+      ],
+      "id": "11db3dc2-3046-47b1-b6e4-26a59a79e6fb"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I",
+          "mode": "list",
+          "cachedResultName": "BrainCoach_AI_Control_Center_V2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1548525689,
+          "mode": "list",
+          "cachedResultName": "followups_master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I/edit#gid=1548525689"
+        },
+        "options": {}
+      },
+      "name": "GoogleSheets - Load followups_master",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -840,
+        -200
+      ],
+      "id": "bfb94349-309c-400c-8fb5-37a2091da51f",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "klCyBadm6qZMJZzc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gemini-3.5-flash",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are BrainCoach AI Premium Re-engagement Specialist.\n\nYour task is to generate a warm, supportive, zero-guilt re-engagement nudge in Russian. \n\nINACTIVE USER CONTEXT:\n- Name: {{ $json[\"first_name\"] }}\n- Primary Keyword: {{ $json[\"current_keyword\"] }}\n- Stage in Funnel: {{ $json[\"current_stage\"] }}\n- Micro-stage (Sub-stage): {{ $json[\"sub_stage\"] || \"none\" }}\n- Cognition Pattern: {{ $json[\"pattern_type\"] || \"none\" }}\n\nBASE TEMPLATES (from followups_master):\n{{ JSON.stringify($node[\"GoogleSheets - Load followups_master\"].json) }}\n\nRULES:\n1. Maintain a premium, psychologically safe coaching tone.\n2. Do NOT guilt-trip the user (\"we haven't heard from you\").\n3. References their primary goal or interest dynamically based on the keyword/pattern.\n4. CTA must be permission-giving and extremely low friction.\n5. Keep it to 2-3 sentences max.\n\nOUTPUT FORMAT:\nReturn ONLY valid JSON. Do not include markdown codeblocks or other formatting.\n\n{\n  \"followup_message\": \"Generated premium re-engagement message here\",\n  \"followup_type\": \"soft_reeng\"\n}",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "name": "Gemini Flash - Generate Nudge",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -620,
+        -200
+      ],
+      "id": "bbd10536-c43a-4985-81e7-3208aedb3040",
+      "credentials": {
+        "openAiApi": {
+          "id": "HYM3h9oDVbyuDQB6",
+          "name": "Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const content = $node[\"Gemini Flash - Generate Nudge\"].json?.message?.content || '';\ntry {\n  const parsed = JSON.parse(content);\n  return [\n    {\n      json: {\n        valid: true,\n        parsed,\n        telegram_user_id: $node[\"Postgres - Get Stuck Users\"].json.telegram_user_id\n      }\n    }\n  ];\n} catch (e) {\n  return [\n    {\n      json: {\n        valid: false,\n        error: e.message,\n        raw: content\n      }\n    }\n  ];\n}"
+      },
+      "name": "Validate - Nudge JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -200
+      ],
+      "id": "fae62236-ed18-4d75-921b-080f520a1005"
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.telegram_user_id}}",
+        "text": "={{$json.parsed.followup_message}}",
+        "additionalFields": {}
+      },
+      "name": "Telegram - Send Nudge",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        -200
+      ],
+      "id": "97937ba9-9600-446b-9532-73e7c33810f9",
+      "credentials": {
+        "telegramApi": {
+          "id": "ErnP6UQqdTAhtxvC",
+          "name": "BrainCoach assistant bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{\n`\nUPDATE clients\nSET \n  last_nudge_sent_at = NOW(),\n  updated_at = NOW()\nWHERE telegram_user_id = ${$json.telegram_user_id};\n`\n}}",
+        "additionalFields": {}
+      },
+      "name": "Postgres - Save Nudge Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        (40 * 1),
+        -200
+      ],
+      "id": "6f0fd52f-be4b-4485-98b2-f4d157f4769f",
+      "credentials": {
+        "postgres": {
+          "id": "Fy1RKV6DluFbarlm",
+          "name": "Postgres account "
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Get Stuck Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Get Stuck Users": {
+      "main": [
+        [
+          {
+            "node": "IF - Stuck Users Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Stuck Users Found?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "GoogleSheets - Load followups_master",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GoogleSheets - Load followups_master": {
+      "main": [
+        [
+          {
+            "node": "Gemini Flash - Generate Nudge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash - Generate Nudge": {
+      "main": [
+        [
+          {
+            "node": "Validate - Nudge JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate - Nudge JSON": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send Nudge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send Nudge": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save Nudge Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
   "settings": {
-    "timezone": "Europe/Moscow"
-  }
+    "executionOrder": "v1"
+  },
+  "versionId": "42d92bbb-ab29-4288-b68d-a414b52859aa",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
 }

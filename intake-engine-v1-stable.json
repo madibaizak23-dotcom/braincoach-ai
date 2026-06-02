@@ -1,0 +1,614 @@
+{
+  "name": "BrainCoach - Master Qualification & Lead Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "tg-trigger-001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ `\nWITH upserted_client AS (\n  INSERT INTO clients (\n    telegram_user_id,\n    first_name,\n    username,\n    current_stage,\n    updated_at,\n    last_message_at\n  )\n  VALUES (\n    ${$node[\"Telegram Trigger\"].json.message.from.id},\n    '${($node[\"Telegram Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\")}',\n    '${($node[\"Telegram Trigger\"].json.message.from.username || \"\").replace(/'/g, \"''\")}',\n    'new_lead',\n    NOW(),\n    NOW()\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET\n    first_name = EXCLUDED.first_name,\n    username = EXCLUDED.username,\n    updated_at = NOW(),\n    last_message_at = NOW()\n  RETURNING *\n), ensured_state AS (\n  INSERT INTO conversation_state (\n    telegram_user_id,\n    sub_stage,\n    pattern_type,\n    current_q_number,\n    qualification_signals,\n    pain_points,\n    created_at,\n    updated_at\n  )\n  SELECT\n    telegram_user_id,\n    COALESCE(NULLIF(current_stage, ''), 'q_surface'),\n    NULL,\n    0,\n    '{}'::jsonb,\n    '[]'::jsonb,\n    NOW(),\n    NOW()\n  FROM upserted_client\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET updated_at = NOW()\n  RETURNING *\n)\nSELECT\n  uc.*,\n  es.sub_stage,\n  es.pattern_type,\n  es.current_q_number,\n  es.qualification_signals,\n  es.pain_points\nFROM upserted_client uc\nJOIN ensured_state es ON es.telegram_user_id = uc.telegram_user_id;\n` }}",
+        "additionalFields": {}
+      },
+      "id": "pg-upsert-002",
+      "name": "Postgres - UPSERT & Get State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        350,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-sub-stage-q-surface",
+              "leftValue": "={{ $json.sub_stage }}",
+              "rightValue": "q_surface",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-new-session-003",
+      "name": "IF - New or Active Session?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-valid-keyword",
+              "leftValue": "={{ /^(память|интеллект|система)$/i.test(($node[\"Telegram Trigger\"].json.message.text || '').trim()) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-keyword-check-004",
+      "name": "IF - Is Valid Keyword?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        850,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.BRAINCOACH_CONTROL_CENTER_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "keywords_master",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "gs-load-keyword-005",
+      "name": "Google Sheets - Load Keyword Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1100,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incomingKeyword = ($node['Telegram Trigger'].json.message.text || '').trim().toLowerCase();\nconst rows = $input.all().map(item => item.json);\nconst match = rows.find(row => String(row.keyword || row.trigger || '').trim().toLowerCase() === incomingKeyword);\n\nif (!match) {\n  return [{ json: { keyword: incomingKeyword, matched: false, consent_text: 'Могу задать несколько коротких вопросов, чтобы точнее понять вашу ситуацию?', first_question: 'Что сейчас больше всего мешает вам с памятью, интеллектом или системой обучения?', pattern_type: incomingKeyword } }];\n}\n\nreturn [{\n  json: {\n    ...match,\n    keyword: incomingKeyword,\n    matched: true,\n    consent_text: match.consent_text || 'Могу задать несколько коротких вопросов, чтобы точнее понять вашу ситуацию?',\n    first_question: match.first_open_question || match.first_question || 'Что именно вы хотите улучшить в первую очередь?',\n    pattern_type: match.pattern_type || incomingKeyword\n  }\n}];"
+      },
+      "id": "code-filter-keyword-006",
+      "name": "Code - Filter Keyword Match",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
+        "text": "={{ $json.consent_text }}",
+        "additionalFields": {}
+      },
+      "id": "tg-send-consent-007",
+      "name": "Telegram - Send Consent Step 3",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
+        "text": "={{ $node[\"Code - Filter Keyword Match\"].json.first_question }}",
+        "additionalFields": {}
+      },
+      "id": "tg-send-first-q-008",
+      "name": "Telegram - Send First Open Q",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ `\nINSERT INTO conversation_state (\n  telegram_user_id,\n  sub_stage,\n  pattern_type,\n  current_q_number,\n  qualification_signals,\n  pain_points,\n  updated_at\n)\nVALUES (\n  ${$node[\"Telegram Trigger\"].json.message.from.id},\n  'why_1_opportunities',\n  '${($node[\"Code - Filter Keyword Match\"].json.pattern_type || $node[\"Code - Filter Keyword Match\"].json.keyword || \"unknown\").replace(/'/g, \"''\")}',\n  1,\n  jsonb_build_object('entry_keyword', '${($node[\"Code - Filter Keyword Match\"].json.keyword || \"\").replace(/'/g, \"''\")}'),\n  '[]'::jsonb,\n  NOW()\n)\nON CONFLICT (telegram_user_id)\nDO UPDATE SET\n  sub_stage = 'why_1_opportunities',\n  pattern_type = EXCLUDED.pattern_type,\n  current_q_number = 1,\n  qualification_signals = COALESCE(conversation_state.qualification_signals, '{}'::jsonb) || EXCLUDED.qualification_signals,\n  updated_at = NOW()\nRETURNING *;\n` }}",
+        "additionalFields": {}
+      },
+      "id": "pg-set-initial-stage-009",
+      "name": "Postgres - Initialize Stage",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.BRAINCOACH_CONTROL_CENTER_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "qualification_flow",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "gs-load-flow-010",
+      "name": "Google Sheets - Load qualification_flow",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        850,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gemini-3.5-flash",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are the BrainCoach 9-step qualification engine. Route the user by current sub_stage, infer high-ticket ICP fit, and return strict JSON only.\n\nReturn JSON with keys: next_sub_stage, message_text, is_target_icp, qualification_signals, lead_summary, offer_payload.",
+              "role": "system"
+            },
+            {
+              "content": "=Current user message:\n{{$node[\"Telegram Trigger\"].json.message.text || ''}}\n\nCurrent sub_stage:\n{{$node[\"Postgres - UPSERT & Get State\"].json.sub_stage || ''}}\n\nPattern type:\n{{$node[\"Postgres - UPSERT & Get State\"].json.pattern_type || ''}}\n\nExisting signals:\n{{JSON.stringify($node[\"Postgres - UPSERT & Get State\"].json.qualification_signals || {})}}\n\nQualification flow rows:\n{{JSON.stringify($input.all().map(item => item.json))}}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "gemini-engine-011",
+      "name": "Gemini Flash - 9-Steps Engine",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1100,
+        450
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HYM3h9oDVbyuDQB6",
+          "name": "Gemini API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.text || $json.output || $json.response || $json.content || JSON.stringify($json);\nlet parsed;\ntry {\n  parsed = typeof raw === 'string' ? JSON.parse(raw.replace(/^```json\\s*/i, '').replace(/```$/i, '').trim()) : raw;\n} catch (error) {\n  parsed = {\n    next_sub_stage: $node['Postgres - UPSERT & Get State'].json.sub_stage || 'why_1_opportunities',\n    message_text: 'Спасибо, понял. Расскажите чуть подробнее: что именно сейчас не получается и почему это важно решить?',\n    is_target_icp: false,\n    qualification_signals: { parse_error: error.message, raw_output: raw },\n    lead_summary: '',\n    offer_payload: {}\n  };\n}\n\nreturn [{\n  json: {\n    next_sub_stage: parsed.next_sub_stage || 'why_1_opportunities',\n    message_text: parsed.message_text || parsed.next_message || 'Спасибо, понял. Что для вас будет хорошим результатом?',\n    is_target_icp: Boolean(parsed.is_target_icp),\n    qualification_signals: parsed.qualification_signals || {},\n    lead_summary: parsed.lead_summary || '',\n    offer_payload: parsed.offer_payload || {}\n  }\n}];"
+      },
+      "id": "code-parse-gemini-012",
+      "name": "Code - Parse Gemini JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-target-icp",
+              "leftValue": "={{ $json.is_target_icp }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-icp-filter-013",
+      "name": "IF - High-Ticket Target Client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {}
+      },
+      "id": "tg-send-next-step-014",
+      "name": "Telegram - Send Next Step / Offer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ `\nUPDATE conversation_state\nSET\n  sub_stage = '${($node[\"Code - Parse Gemini JSON\"].json.next_sub_stage || \"why_1_opportunities\").replace(/'/g, \"''\")}',\n  qualification_signals = COALESCE(qualification_signals, '{}'::jsonb) || '${JSON.stringify($node[\"Code - Parse Gemini JSON\"].json.qualification_signals || {}).replace(/'/g, \"''\")}'::jsonb,\n  current_q_number = COALESCE(current_q_number, 0) + 1,\n  updated_at = NOW()\nWHERE telegram_user_id = ${$node[\"Telegram Trigger\"].json.message.from.id}\nRETURNING *;\n` }}",
+        "additionalFields": {}
+      },
+      "id": "pg-update-substage-015",
+      "name": "Postgres - Update Sub-Stage & Signals",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-offer-transition",
+              "leftValue": "={{ $node[\"Code - Parse Gemini JSON\"].json.next_sub_stage }}",
+              "rightValue": "offer_transition",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-is-it-offer-016",
+      "name": "IF - Is Offer Transition?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2350,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": "Notion Leads Database",
+        "title": "={{ `${$node[\"Telegram Trigger\"].json.message.from.first_name || 'Telegram Lead'} - ${$node[\"Postgres - UPSERT & Get State\"].json.pattern_type || 'BrainCoach'}` }}",
+        "propertiesUI": {
+          "values": [
+            {
+              "key": "Telegram ID",
+              "type": "number",
+              "numberValue": "={{ $node[\"Telegram Trigger\"].json.message.from.id }}"
+            },
+            {
+              "key": "Username",
+              "type": "richText",
+              "richTextValue": "={{ $node[\"Telegram Trigger\"].json.message.from.username || '' }}"
+            },
+            {
+              "key": "Pattern",
+              "type": "richText",
+              "richTextValue": "={{ $node[\"Postgres - UPSERT & Get State\"].json.pattern_type || '' }}"
+            },
+            {
+              "key": "Lead Summary",
+              "type": "richText",
+              "richTextValue": "={{ $node[\"Code - Parse Gemini JSON\"].json.lead_summary }}"
+            },
+            {
+              "key": "Signals",
+              "type": "richText",
+              "richTextValue": "={{ JSON.stringify($node[\"Code - Parse Gemini JSON\"].json.qualification_signals || {}) }}"
+            }
+          ]
+        },
+        "pageContent": "=### BrainCoach Hot Lead\n\n**Telegram ID**: {{$node[\"Telegram Trigger\"].json.message.from.id}}\n**Username**: @{{$node[\"Telegram Trigger\"].json.message.from.username || ''}}\n**Pattern**: {{$node[\"Postgres - UPSERT & Get State\"].json.pattern_type || ''}}\n\n#### Lead Summary\n{{$node[\"Code - Parse Gemini JSON\"].json.lead_summary}}\n\n#### Signals\n{{JSON.stringify($node[\"Code - Parse Gemini JSON\"].json.qualification_signals || {}, null, 2)}}"
+      },
+      "id": "notion-create-lead-017",
+      "name": "Notion - Create Hot Lead 🔥",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [
+        2600,
+        380
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-api-credentials-id",
+          "name": "Notion CRM account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
+        "text": "Спасибо за ответы. По тому, что вы описали, сейчас лучше начать с самостоятельной базы и наблюдения за прогрессом. Если ситуация изменится, напишите мне снова одним из ключевых слов: память, интеллект или система.",
+        "additionalFields": {}
+      },
+      "id": "tg-soft-exit-018",
+      "name": "Telegram - Soft Exit (ICP Reject)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        550
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres - UPSERT & Get State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - UPSERT & Get State": {
+      "main": [
+        [
+          {
+            "node": "IF - New or Active Session?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - New or Active Session?": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Valid Keyword?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Load qualification_flow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Valid Keyword?": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Load Keyword Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Load Keyword Config": {
+      "main": [
+        [
+          {
+            "node": "Code - Filter Keyword Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Filter Keyword Match": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send Consent Step 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send Consent Step 3": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send First Open Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send First Open Q": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Initialize Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Load qualification_flow": {
+      "main": [
+        [
+          {
+            "node": "Gemini Flash - 9-Steps Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash - 9-Steps Engine": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Gemini JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Gemini JSON": {
+      "main": [
+        [
+          {
+            "node": "IF - High-Ticket Target Client?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - High-Ticket Target Client?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send Next Step / Offer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - Soft Exit (ICP Reject)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send Next Step / Offer": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Update Sub-Stage & Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Update Sub-Stage & Signals": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Offer Transition?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Offer Transition?": {
+      "main": [
+        [
+          {
+            "node": "Notion - Create Hot Lead 🔥",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "intake-engine-v1-stable",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "braincoach-ai"
+  },
+  "tags": []
+}

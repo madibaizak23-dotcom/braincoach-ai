@@ -1,11 +1,310 @@
 {
   "name": "BrainCoach - Offer Engine",
-  "description": "Генерация и отправка персонализированных предложений",
-  "version": "1.0",
-  "nodes": [],
-  "connections": {},
-  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{\n`\nSELECT \n  c.telegram_user_id,\n  c.first_name,\n  c.username,\n  c.current_keyword,\n  COALESCE(\n    (SELECT json_agg(json_build_object('signal_type', signal_type, 'meaning', meaning)) \n     FROM memory_facts \n     WHERE telegram_user_id = c.telegram_user_id),\n    '[]'::json\n  ) as memory_facts\nFROM clients c\nWHERE c.telegram_user_id = ${$json.telegram_user_id};\n`\n}}",
+        "additionalFields": {}
+      },
+      "name": "Postgres - Get Dossier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -940,
+        -180
+      ],
+      "id": "c1f374ec-68e6-4ca4-8f01-6cfdc22bbb99",
+      "credentials": {
+        "postgres": {
+          "id": "Fy1RKV6DluFbarlm",
+          "name": "Postgres account "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I",
+          "mode": "list",
+          "cachedResultName": "BrainCoach_AI_Control_Center_V2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2048525688,
+          "mode": "list",
+          "cachedResultName": "offers_master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1r7n5E1eU5IKK6RPkK4HHsLxorFpgs66GZQwYhI0fL_I/edit#gid=2048525688"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "keyword",
+              "lookupValue": "={{$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "GoogleSheets - offers_master",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -740,
+        -180
+      ],
+      "id": "bfb94349-309c-400c-8fb5-37a2091da51d",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "klCyBadm6qZMJZzc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.4-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5.4-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are BrainCoach Offer Customizer.\n\nROLE\n\nYou are a high-end cognitive performance copywriter.\n\nYour job is to synthesize the client's psychological pain points and goals into a highly customized, premium consultation offer.\n\nINPUTS\n\n1. Client Dossier (including first name, keyword, and memory_facts)\n2. Base Offer Text from Google Sheets (offers_master)\n\nTASK\n\nGenerate a tailored message that:\n\n- Connects directly to the client's diagnosed cognitive constraints (from memory_facts)\n- Softly positions the 1-on-1 consultation as a custom-tailored strategic diagnostic session to solve exactly these issues\n- Maintains a premium, psychologically safe, and consultative tone\n- Includes a soft Call to Action (CTA)\n\nReturn the text in Russian.",
+              "role": "system"
+            },
+            {
+              "content": "=Client:\n{{ JSON.stringify($node[\"Postgres - Get Dossier\"].json) }}\n\nBase Offer:\n{{ $node[\"GoogleSheets - offers_master\"].json[\"offer_text\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "OpenAI - Custom Offer Generator",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -540,
+        -180
+      ],
+      "id": "bbd10536-c43a-4985-81e7-3208aedb3039",
+      "credentials": {
+        "openAiApi": {
+          "id": "HYM3h9oDVbyuDQB6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{\n`\nINSERT INTO offers_sent (telegram_user_id, offer_id, keyword, offer_message, status)\nVALUES (\n  ${$node[\"Postgres - Get Dossier\"].json[\"telegram_user_id\"]},\n  '${$node[\"GoogleSheets - offers_master\"].json[\"offer_id\"] || \"offer_default\"}',\n  '${$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}',\n  '${$node[\"OpenAI - Custom Offer Generator\"].json[\"message\"][\"content\"].replace(/'/g, \"''\")}',\n  'pending'\n)\nON CONFLICT (telegram_user_id, offer_id) \nDO UPDATE SET offer_message = EXCLUDED.offer_message, status = 'pending';\n\nINSERT INTO events (\n  telegram_user_id,\n  event_name,\n  event_category,\n  keyword,\n  model_used\n)\nVALUES (\n  ${$node[\"Postgres - Get Dossier\"].json[\"telegram_user_id\"]},\n  'offer.sent',\n  'offer',\n  '${$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}',\n  'gpt-5.4-mini'\n);\n`\n}}",
+        "additionalFields": {}
+      },
+      "name": "Postgres - Save Offer Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -180
+      ],
+      "id": "6f0fd52f-be4b-4485-98b2-f4d157f47699",
+      "credentials": {
+        "postgres": {
+          "id": "Fy1RKV6DluFbarlm",
+          "name": "Postgres account "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Postgres - Get Dossier\"].json[\"telegram_user_id\"]}}",
+        "text": "={{$node[\"OpenAI - Custom Offer Generator\"].json[\"message\"][\"content\"]}}",
+        "additionalFields": {}
+      },
+      "name": "Telegram - Send Offer Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -180
+      ],
+      "id": "97937ba9-9600-446b-9532-73e7c33810ec",
+      "credentials": {
+        "telegramApi": {
+          "id": "ErnP6UQqdTAhtxvC",
+          "name": "BrainCoach assistant bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": "Notion Leads Database",
+        "title": "={{$node[\"Postgres - Get Dossier\"].json[\"first_name\"]}} (@{{$node[\"Postgres - Get Dossier\"].json[\"username\"]}})",
+        "propertiesUI": {
+          "values": [
+            {
+              "key": "Telegram ID",
+              "type": "number",
+              "numberValue": "={{$node[\"Postgres - Get Dossier\"].json[\"telegram_user_id\"]}}"
+            },
+            {
+              "key": "Keyword",
+              "type": "select",
+              "selectValue": "={{$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}}"
+            },
+            {
+              "key": "Status",
+              "type": "select",
+              "selectValue": "Offer Sent"
+            }
+          ]
+        },
+        "pageContent": "=### Когнитивное досье лида\n\n**Имя**: {{$node[\"Postgres - Get Dossier\"].json[\"first_name\"]}}\n**Тема интереса**: {{$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}}\n\n#### Выявленные боли и блокировки:\n{{$node[\"Postgres - Get Dossier\"].json[\"memory_facts\"].map(m => `- **${m.signal_type}**: ${m.meaning}`).join('\\n')}}\n\n#### Персонализированный оффер:\n{{$node[\"OpenAI - Custom Offer Generator\"].json[\"message\"][\"content\"]}}"
+      },
+      "name": "Notion - Create CRM Lead Card",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -180
+      ],
+      "id": "cf61ae26-ec1e-47c1-b719-064016893f99",
+      "credentials": {
+        "notionApi": {
+          "id": "notion-api-credentials-id",
+          "name": "Notion CRM account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-10022334455",
+        "text": "=🔥 **Новый квалифицированный лид отправлен в CRM!**\n\n*   **Имя**: {{$node[\"Postgres - Get Dossier\"].json[\"first_name\"]}}\n*   **Кодовое слово**: {{$node[\"Postgres - Get Dossier\"].json[\"current_keyword\"]}}\n*   **Пользователь**: @{{$node[\"Postgres - Get Dossier\"].json[\"username\"]}}\n\n👉 Досье лида и психологические блокировки созданы в **Notion CRM**.",
+        "additionalFields": {}
+      },
+      "name": "Telegram - Notify Sales Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        280,
+        -180
+      ],
+      "id": "97937ba9-9600-446b-9532-73e7c33810ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "ErnP6UQqdTAhtxvC",
+          "name": "BrainCoach assistant bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "trigger-offer-engine",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1140,
+        -180
+      ],
+      "id": "ea4c509c-cc33-4e61-9878-b4d35d501f89"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Get Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Get Dossier": {
+      "main": [
+        [
+          {
+            "node": "GoogleSheets - offers_master",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GoogleSheets - offers_master": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Custom Offer Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Custom Offer Generator": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save Offer Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Save Offer Sent": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send Offer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send Offer Message": {
+      "main": [
+        [
+          {
+            "node": "Notion - Create CRM Lead Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Create CRM Lead Card": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Notify Sales Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
   "settings": {
-    "timezone": "Europe/Moscow"
-  }
+    "executionOrder": "v1"
+  },
+  "versionId": "42d92bbb-ab29-4288-b68d-a414b5285999",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
 }
