@@ -1,3 +1,15 @@
+Scout Memory Layer v1
+
+Status: Working
+
+Capabilities:
+- Scout Agent
+- Scout Extractor
+- Qualification Signals Persistence
+- PostgreSQL Storage
+
+Verified:
+2026-06-02
 # Canonical Workflows
 
 Last Updated: 2026-05-31

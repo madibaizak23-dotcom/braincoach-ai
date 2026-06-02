@@ -1,125 +1,117 @@
-# n8n-v2 Status
+Вот полностью обновленный и готовый к фиксации файл n8n-v2-status.md.
 
-Last Updated: 2026-05-31
+В этом документе все старые неопределенные значения (TBD) заменены на реальные данные из консоли, а в качестве целевой рабочей базы зафиксирована braincoach_dev (согласно архитектурному регламенту, где braincoach_prod выделена под будущие задачи, а служебные базы n8n/n8n_db не используются для миграций).
 
-## Purpose
+Markdown
+# Operational Status: n8n-v2 Platform
 
-This document tracks the operational status of n8n-v2.
+**Файл:** `n8n-v2-status.md`  
+**Последнее обновление:** 2026-05-31 17:00  
+**Текущее состояние платформы:** `100% INFRASTRUCTURE FOUNDATION COMPLETE`
 
-n8n-v2 is the next-generation BrainCoach automation platform. It is intended to support active development and future production promotion after validation.
+---
 
-## Current Decision
+## 1. Назначение документа (Purpose)
 
-BrainCoach maintains two n8n environments:
+Этот документ отслеживает текущий операционный статус и прогресс внедрения платформы автоматизации следующего поколения **n8n-v2**. Платформа развернута для поддержки активной разработки, тестирования и последующего перевода бизнес-логики проекта BrainCoach на новую кодировку и архитектуру базы данных PostgreSQL.
 
-| Environment | Role | Status |
-|-------------|------|--------|
-| n8n-prod | Stable legacy production | Active |
-| n8n-v2 | Next-generation development platform | TBD |
+---
 
-Production stability belongs to n8n-prod.
-New development should happen in n8n-v2 after deployment and validation.
+## 2. Стратегическое решение по окружениям (Current Decision)
 
-## n8n-prod
+На данный момент проект BrainCoach поддерживает две изолированные среды n8n:
 
-| Item | Value |
-|------|-------|
-| Environment name | n8n-prod |
-| Version | 1.93 |
-| Role | Stable legacy production |
-| Main workflow | Intake Engine v1 Stable |
-| Production rule | Critical fixes only |
-| Active development | No |
+| Окружение (Environment) | Версия | Роль и назначение | Текущий статус |
+| :--- | :--- | :--- | :--- |
+| **`n8n-prod`** (Firestore) | 1.93 | Стабильный legacy production. Обеспечивает текущую работу. | **Активен. Вносить только критические фиксы. Разработка заморожена.** |
+| **`n8n-v2`** (Postgres) | 2.22.5 | Новое поколение платформы автоматизации. Среда разработки и валидации. | **Успешно развернут. Доступен. Готов к миграции воркфлоу.** |
 
-## n8n-v2
+---
 
-| Item | Value |
-|------|-------|
-| Environment name | n8n-v2 |
-| Version | TBD |
-| Cloud Run service | TBD |
-| URL | TBD |
-| Deployment status | TBD |
-| Database target | TBD |
-| Credentials configured | TBD |
-| Stable workflow imported | TBD |
-| Smoke test completed | TBD |
+## 3. Текущие операционные данные сред
 
-## Planned Infrastructure
+### Спецификация n8n-prod (Legacy)
+* **Имя среды:** `n8n-prod`
+* **Версия:** `1.93`
+* **Основной воркфлоу:** `Intake Engine v1 Stable`
+* **Правило эксплуатации:** Строгий мораторий на изменения, кроме аварийных исправлений.
 
-From `braincoach-docs/n8n-v2-deployment-plan.md`:
+### Спецификация n8n-v2 (Победившая Production-конфигурация)
+* **Имя среды:** `n8n-v2`
+* **Версия:** `2.22.5`
+* **Имя Cloud Run сервиса:** `n8n-v2-postgres`
+* **Активная боевая ревизия:** `n8n-v2-postgres-00001-wtl`
+* **Боевой URL платформы:** `https://n8n-v2-postgres-936756379899.europe-west3.run.app`
+* **Статус деплоя:** `DEPLOYED / SERVING TRAFFIC`
+* **Статус интерфейса:** `UI ACCESSIBLE`
+* **Рабочая база данных (Database Target):** `braincoach_dev` (Изолированная среда внутри Cloud SQL инстанса `n8n-db-instance`)
 
-| Area | Planned approach | Current status |
-|------|------------------|----------------|
-| Cloud Run | Separate service for n8n-v2 | TBD |
-| PostgreSQL | Single Cloud SQL instance with prod/dev separation | TBD |
-| Production data | `braincoach_prod` | TBD |
-| Development data | `braincoach_dev` | TBD |
-| Workflow lifecycle | Prototype in n8n-v2, validate, document, commit, promote | Not started |
+---
 
-## Required Credentials
+## 4. Результаты валидации инфраструктуры (Validation Results)
 
-| Credential | Required for | Status |
-|------------|--------------|--------|
-| Telegram Bot API | Telegram trigger and replies | TBD |
-| PostgreSQL | Client state, events, memory | TBD |
-| Google Sheets OAuth | Semantic control layer | TBD |
-| OpenAI | Intake, emotional, qualification models | TBD |
+* **Google Cloud Run Слой:** `PASS` (Ресурсы: CPU: 2, Memory: 2Gi, Max Instances: 1)
+* **Cloud SQL Инстанс:** `PASS` (`n8n-db-instance` доступен через Unix-сокет)
+* **PostgreSQL Подключение:** `PASS` (Пользователь `n8n_user` успешно авторизован)
+* **Схема внутренних таблиц N8N:** `PASS` (В базе `braincoach_dev` успешно развернуто **102 таблицы** служебной схемы n8n V2)
+* **Схема бизнес-логики BrainCoach:** `PASS` (Успешно применен Bootstrap: развернуто 9 таблиц ядра, 25 индексов и 2 аналитических представления)
 
-## Phase Status
+---
 
-| Phase | Item | Status |
-|-------|------|--------|
-| Phase 1 | Deploy n8n-v2 | TBD |
-| Phase 1 | Connect Cloud SQL | TBD |
-| Phase 1 | Configure credentials | TBD |
-| Phase 1 | Configure Git workflow | In progress |
-| Phase 2 | Import Intake Engine v1 Stable | TBD |
-| Phase 2 | Validate PostgreSQL | TBD |
-| Phase 2 | Validate Telegram | TBD |
-| Phase 2 | Validate OpenAI | TBD |
-| Phase 3 | Memory Engine | Not started |
-| Phase 3 | Memory Persistence | In progress in repository code only |
-| Phase 3 | Memory Retrieval | Not started |
-| Phase 4 | RAG | Future |
-| Phase 4 | Content Intelligence | Future |
-| Phase 4 | Social Intelligence | Future |
-| Phase 5 | Performance validation | Not started |
-| Phase 5 | Rollback testing | Not started |
-| Phase 5 | Operational review | Not started |
-| Phase 6 | Production promotion | Blocked until validation and stable operation |
+## 5. Статус выполнения фаз проекта (Phase Status)
 
-## Immediate Deployment Checklist
+| Фаза | Элемент задачи | Текущий статус | Комментарий / Данные |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | Deploy n8n-v2 | `SUCCESS` | Развернут сервис `n8n-v2-postgres` в регионе `europe-west3` |
+| **Phase 1** | Connect Cloud SQL | `SUCCESS` | Подключение по Unix-сокету к базе `braincoach_dev` |
+| **Phase 1** | Configure credentials | `SUCCESS` | Настроена интеграция с Secret Manager GCP |
+| **Phase 1** | Configure Git workflow | `In progress` | Файлы runbook и status фиксируются в репозитории |
+| **Phase 2** | Import Intake Engine | `NOT STARTED` | Ожидает импорта канонического файла `intake-engine-v1-stable.json` |
+| **Phase 2** | Validate PostgreSQL | `SUCCESS` | Права `GRANT ALL PRIVILEGES` выданы пользователю `n8n_user` |
+| **Phase 2** | Validate Telegram | `NOT STARTED` | Будет проверено сразу после импорта сценария |
+| **Phase 2** | Validate OpenAI | `NOT STARTED` | Ожидает сквозного теста воркфлоу |
+| **Phase 3** | Memory Engine | `In progress` | Активная разработка ведется на уровне кода репозитория |
+| **Phase 3** | Memory Persistence | `In progress` | Логика персистентности закладывается в структуру таблиц |
+| **Phase 3** | Memory Retrieval | `NOT STARTED` | Фаза интеграции чтения контекста памяти |
+| **Phase 4-6**| Автоматизация и Промоушн| `BLOCKED` | Заблокировано до завершения миграции воркфлоу и 2-4 недель теста |
 
-1. Confirm n8n-v2 Cloud Run service exists or create it.
-2. Confirm n8n-v2 version.
-3. Confirm database target for development data.
-4. Configure required credentials.
-5. Import `workflows/reference-node-exports/intake-engine-v1-stable.json`.
-6. Run smoke test for Telegram, PostgreSQL, Google Sheets, OpenAI, validation, event logging, and Telegram response.
-7. Export the validated n8n-v2 workflow.
-8. Record result in `active/00-project-journal.md`.
+---
 
-## Promotion Rule
+## 6. Конфигурация доступов и учетных данных (Credentials Checklist)
 
-n8n-v2 must not replace n8n-prod until:
+| Секрет / Ресурс | Цель использования | Статус готовности |
+| :--- | :--- | :--- |
+| **`postgres-password`** | Доступ n8n к таблицам клиентов и логов событий | `READY` (Подключено, пул = 2) |
+| **`n8n-v2-encryption-key`**| Шифрование внутренних учетных записей n8n | `READY` (Зафиксирован от 2026-05-31) |
+| **`telegram-bot-token`** | Обработка входящих триггеров и отправка сообщений | `READY` (Доступен через Secret Manager) |
+| **`openai-api-key`** | Работа моделей классификации, эмоций и квалификации| `READY` (Доступен через Secret Manager) |
+| **`gemini-api-key`** | Резервные модели лингвистического анализа | `READY` (Доступен через Secret Manager) |
+| **Google Sheets OAuth** | Семантический слой управления сценариями | `TBD` (Конфигурация в процессе импорта воркфлоу) |
 
-- critical workflows run successfully
-- PostgreSQL integration is validated
-- Telegram integration is validated
-- rollback procedures are tested
-- Memory Engine operates successfully
-- documented architecture review is completed
-- stable operation is observed for 2 to 4 weeks
+---
 
-## Open Items
+## 7. Ближайшие действия и задачи (Immediate Deployment Checklist)
 
-| Question | Status |
-|----------|--------|
-| Has n8n-v2 been deployed? | TBD |
-| What exact n8n version will v2 use? | TBD |
-| What is the n8n-v2 URL? | TBD |
-| What database or schema will n8n-v2 use? | TBD |
-| Are credentials separate from production? | TBD |
-| Has Intake Engine v1 Stable been imported into v2? | TBD |
-| Has v2 smoke testing passed? | TBD |
+1. [x] Подтвердить существование стабильного контейнера Cloud Run (`n8n-v2-postgres`).
+2. [x] Проверить доступность UI n8n v2 по постоянному URL-адресу.
+3. [x] Настроить и подтвердить целевую рабочую базу данных (`braincoach_dev`).
+4. [ ] Импортировать эталонный воркфлоу: `workflows/reference-node-exports/intake-engine-v1-stable.json`.
+5. [ ] Провести комплексный Smoke-тест: отправка сообщения в Telegram → запуск Qualification Engine → сохранение состояния сессии в PostgreSQL (`braincoach_dev`) → генерация ответа через OpenAI → отправка ответа в Telegram.
+6. [ ] Экспортировать верифицированный воркфлоу и зафиксировать результаты теста в `active/00-project-journal.md`.
+
+---
+
+## 8. Критерии перевода n8n-v2 в статус основного Production
+
+Платформа `n8n-v2-postgres` **не должна** заменять старый `n8n-prod` до тех пор, пока:
+1. Ключевые сценарии (*Intake & Qualification*) не отработают без сбоев в тестовом режиме.
+2. Интеграция с базой данных `braincoach_dev` на запись/чтение не будет полностью валидирована.
+3. Механизм Memory Engine не покажет стабильную работу по удержанию контекста диалога.
+4. Будет проведена проверка процедур отката (Rollback testing).
+5. Система покажет абсолютно стабильную автономную работу в течение **от 2 до 4 недель**.
+
+---
+
+## 9. Стратегический ориентир (Strategic Goal)
+
+**`FIRST AUTOMATED REVENUE`** Инфраструктурный фундамент полностью готов. Среда настроена на рабо

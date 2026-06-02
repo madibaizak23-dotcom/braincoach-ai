@@ -1,0 +1,444 @@
+{
+  "name": "qualification-engine-v2-scout-memory",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -464,
+        224
+      ],
+      "id": "ef808b1d-9b39-46d7-9631-171dd9616ef3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "wtSzJaX2q89eTfbp",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Текущая цель раскопки:\n{{ $json.next_objective }}\nУже известно:\n{{ JSON.stringify($json.known_signals) }}",
+        "options": {
+          "systemMessage": "Ты Scout BrainCoach AI.\n\nТвоя единственная задача — собрать карту ситуации человека.\nФормулируй вопросы так, как спрашивает внимательный собеседник.\n\nИзбегай фраз:\n\n- что произошло прямо перед тем\n- что именно привело вас\n- опишите подробно\n- расскажите детально\n\nПредпочитай короткие естественные вопросы.\nТы НЕ консультант.\nТы НЕ преподаватель.\nТы НЕ психолог.\nТы НЕ продаешь услуги.\n\nЗапрещено:\n\n- давать советы\n- объяснять причины проблемы\n- ставить диагнозы\n- обучать\n- предлагать решения\n- рассказывать о BrainCoach\n- предлагать консультацию\n\nЗапрещено использовать:\n\n- отправная точка\n- данное состояние\n- указанная проблема\n- описанная ситуация\n- текущая цель\n- вышеупомянутое\n\nПиши живым разговорным языком.\nВопрос должен звучать как сообщение в Telegram.\n\nТебе передается:\n\nnext_objective\nknown_signals\n\nТвоя задача:\n\n1. Понять какое поле нужно заполнить\n2. Задать ОДИН короткий вопрос\n3. Получить недостающую информацию\n4. Продвинуть раскопку глубже\n\nПоля карты:\n\n- trigger_event\n- visible_problem\n- goal\n- stakes\n- emotional_driver\n- cost_of_inaction\n- past_attempts\n- investment_history\n- desired_state\n- readiness\n\nПравила:\n\n- один вопрос за сообщение\n- максимум 2 предложения\n- не более 30 слов\n- не перечисляй варианты ответа\n- не делай выводов\n- не интерпретируй\n- не повторяй вопрос другими словами\n\nЕсли информации недостаточно — уточняй.\n\nОтвечай обычным текстом.\nТолько вопросом."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -400,
+        -48
+      ],
+      "id": "2c7cfd90-484b-485d-975e-3e3ab4866d4f",
+      "name": "AI Agent Nano - Intake & Router"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger1",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        64
+      ],
+      "id": "419e6afe-763d-4420-9d15-ae46a51c017d",
+      "webhookId": "7420202f-b1a4-40af-9b0e-9cb452aee99a",
+      "credentials": {
+        "telegramApi": {
+          "id": "eMZ34VQ3eQq71HNK",
+          "name": "Telegram BrainCoach_intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger1\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{$node[\"AI Agent Nano - Intake & Router\"].json.output}}",
+        "additionalFields": {}
+      },
+      "name": "Telegram - Send Question",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        80
+      ],
+      "id": "337d8555-9c05-4922-9448-427ad3a80604",
+      "webhookId": "80ae337e-4994-4a06-8c95-d4e84277d9ca",
+      "credentials": {
+        "telegramApi": {
+          "id": "eMZ34VQ3eQq71HNK",
+          "name": "Telegram BrainCoach_intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH upserted_client AS (\n  INSERT INTO clients (\n    telegram_user_id,\n    first_name,\n    username,\n    current_stage,\n    last_message_at,\n    updated_at\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger1\"].json.message.from.id }}',\n    '{{ ($node[\"Telegram Trigger1\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n    '{{ ($node[\"Telegram Trigger1\"].json.message.from.username || \"\").replace(/'/g, \"''\") }}',\n    'new_lead',\n    NOW(),\n    NOW()\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET\n    username = EXCLUDED.username,\n    last_message_at = NOW(),\n    updated_at = NOW()\n  RETURNING *\n), \nensured_state AS (\n  INSERT INTO conversation_state (\n    telegram_user_id,\n    sub_stage,\n    pattern_type,\n    qualification_signals\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger1\"].json.message.from.id }}',\n    'q_surface',\n    NULL,\n    '{}'::jsonb\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET updated_at = NOW()\n  RETURNING *\n)\nSELECT\n  uc.current_stage,\n  uc.allow_reminders,\n  es.sub_stage,\n  es.pattern_type,\n  es.qualification_signals\nFROM upserted_client uc\nJOIN ensured_state es ON es.telegram_user_id = uc.telegram_user_id;",
+        "additionalFields": {}
+      },
+      "name": "Postgres - Find Client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -176
+      ],
+      "id": "3d28ccb2-4c09-4f27-a824-6f1ef44b6116",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    telegram_user_id,\n    role,\n    content,\n    created_at\n)\nVALUES (\n    '{{ $node[\"Telegram Trigger1\"].json.message.from.id }}',\n    'user',\n    '{{ ($node[\"Telegram Trigger1\"].json.message.text || \"\").replace(/'/g,\"''\") }}',\n    NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1088,
+        64
+      ],
+      "id": "0a6565f5-4b26-4aad-8e4c-e4b961694e54",
+      "name": "Postgres - Save User Message",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    telegram_user_id,\n    role,\n    content,\n    created_at\n)\nVALUES (\n    '{{ $node[\"Telegram Trigger1\"].json.message.from.id }}',\n    'assistant',\n    '{{ ($json.output || \"\").replace(/'/g,\"''\") }}',\n    NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        784,
+        176
+      ],
+      "id": "cd630d17-0207-4121-b441-b9d4981c5151",
+      "name": "Postgres - Save Assistant Message",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const client = $('Postgres - Find Client').first().json;\n\nconst signals = client.qualification_signals || {};\n\nconst scoutFields = [\n  'trigger_event',\n  'visible_problem',\n  'goal',\n  'stakes',\n  'emotional_driver',\n  'cost_of_inaction',\n  'past_attempts',\n  'investment_history',\n  'desired_state',\n  'readiness'\n];\n\nlet nextObjective = null;\n\nfor (const field of scoutFields) {\n  if (!signals[field]) {\n    nextObjective = field;\n    break;\n  }\n}\n\nreturn [\n  {\n    json: {\n      next_objective: nextObjective,\n      known_signals: signals,\n      current_stage: client.current_stage,\n      sub_stage: client.sub_stage\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        48
+      ],
+      "id": "14edc2ac-eed6-4e64-9d5d-ea157329444d",
+      "name": "Scout Context Builder"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $node[\"Telegram Trigger1\"].json.message.text }}",
+        "options": {
+          "systemMessage": "Ты Scout Extractor.\n\nТвоя задача — извлекать новые сигналы из сообщения пользователя для заполнения qualification_signals.\n\nТебе передается сообщение пользователя.\n\nИзвлекай только то, что прямо присутствует в сообщении.\n\nНе придумывай факты.\n\nНе интерпретируй скрытые смыслы.\n\nНе ставь диагнозы.\n\nНе объясняй причины.\n\nНе делай выводов о человеке.\n\nЕсли сигнал можно определить уверенно — заполни его.\n\nЕсли сигнала нет — используй null.\n\nРазрешено извлекать частичные сигналы.\n\nНе требуй полного предложения.\n\nНапример:\n\nСообщение:\n\"готовиться к ЕНТ\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"goal\": \"подготовка к ЕНТ\"\n},\n\"depth_delta\": 10\n}\n\nСообщение:\n\"сын сильно переживает\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"emotional_driver\": \"сильное переживание\"\n},\n\"depth_delta\": 10\n}\n\nСообщение:\n\"занимаемся уже полгода\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"investment_history\": \"полгода подготовки\"\n},\n\"depth_delta\": 10\n}\n\nПоля для извлечения:\n\n* trigger_event\n* visible_problem\n* goal\n* stakes\n* emotional_driver\n* cost_of_inaction\n* past_attempts\n* investment_history\n* desired_state\n* readiness\n\nВерни JSON строго в формате:\n\n{\n\"new_signals\": {\n\"trigger_event\": null,\n\"visible_problem\": null,\n\"goal\": null,\n\"stakes\": null,\n\"emotional_driver\": null,\n\"cost_of_inaction\": null,\n\"past_attempts\": null,\n\"investment_history\": null,\n\"desired_state\": null,\n\"readiness\": null\n},\n\"depth_delta\": 0\n}\n\nВозвращай только JSON.\nНикакого текста вне JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -32,
+        -48
+      ],
+      "id": "f90ff33d-7175-4e86-b6f0-d85d7792808e",
+      "name": "Scout Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "855059bc-300f-417f-906d-061ceb81b736",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "wtSzJaX2q89eTfbp",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentSignals =\n$('Postgres - Find Client').first().json.qualification_signals || {};\n\nconst extracted =\n$('Parse Extractor JSON').first().json.new_signals || {};\n\nconst merged = { ...currentSignals };\n\nfor (const [key, value] of Object.entries(extracted)) {\n  if (value !== null) {\n    merged[key] = value;\n  }\n}\n\nreturn [\n  {\n    json: {\n      qualification_signals: merged\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        48
+      ],
+      "id": "9cb02bc4-743f-45a7-aa57-1739fe2a1808",
+      "name": "Merge Qualification Signals"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE conversation_state\nSET\n    qualification_signals = '{{ JSON.stringify($json.qualification_signals).replace(/'/g,\"''\") }}'::jsonb,\n    updated_at = NOW()\nWHERE telegram_user_id =\n'{{ $node[\"Telegram Trigger1\"].json.message.from.id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        752,
+        -288
+      ],
+      "id": "7d728264-c233-46c2-ba33-4e3ad7b0eb2c",
+      "name": "Update Conversation State",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\nqualification_signals,\nsub_stage,\nupdated_at\nFROM conversation_state\nWHERE telegram_user_id =\n'{{ $node[\"Telegram Trigger1\"].json.message.from.id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        784,
+        -32
+      ],
+      "id": "4bed36f9-ffe2-49f7-842b-d53ec46bcaf1",
+      "name": "Verify Signals",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Scout Extractor').first().json.output;\n\nconst parsed = JSON.parse(raw);\n\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -208
+      ],
+      "id": "478bd891-d013-44e1-98a1-bba339958ae0",
+      "name": "Parse Extractor JSON"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Nano - Intake & Router",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Nano - Intake & Router": {
+      "main": [
+        [
+          {
+            "node": "Scout Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Find Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Find Client": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save User Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Send Question": {
+      "main": [
+        []
+      ]
+    },
+    "Postgres - Save Assistant Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Send Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Save User Message": {
+      "main": [
+        [
+          {
+            "node": "Scout Context Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scout Context Builder": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Nano - Intake & Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scout Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scout Extractor": {
+      "main": [
+        [
+          {
+            "node": "Parse Extractor JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Qualification Signals": {
+      "main": [
+        [
+          {
+            "node": "Update Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Verify Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Extractor JSON": {
+      "main": [
+        [
+          {
+            "node": "Merge Qualification Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signals": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save Assistant Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "260b49b4-2e3d-4ad7-88b9-847772b25920",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48d6698760d67e9b0cb2984cfccb6ee712afdcc3e47735c395f68c6ceaddea3c"
+  },
+  "id": "8MaNjQlwL2t6DfDB",
+  "tags": []
+}
