@@ -1,0 +1,697 @@
+{
+  "name": "braincoach-scout-architect-v1",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const signals =\n$('Merge Scout Memory').first().json.qualification_signals || {};\n\nconst scoutFields = [\n  'trigger_event',\n  'visible_problem',\n  'goal',\n  'stakes',\n  'emotional_driver',\n  'cost_of_inaction',\n  'past_attempts',\n  'investment_history',\n  'desired_state',\n  'readiness'\n];\n\nlet completed = 0;\n\nfor (const field of scoutFields) {\n  if (\n    signals[field] !== null &&\n    signals[field] !== undefined &&\n    signals[field] !== ''\n  ) {\n    completed++;\n  }\n}\n\nconst depthScore = Math.round(\n  (completed / scoutFields.length) * 100\n);\n\nreturn [\n  {\n    json: {\n      qualification_signals: signals,\n      completed_fields: completed,\n      total_fields: scoutFields.length,\n      depth_score: depthScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        224
+      ],
+      "id": "9227ec58-721d-4564-96c1-ceea7e2fdf5b",
+      "name": "Depth Calculator"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        -160
+      ],
+      "id": "f0897fd6-0feb-4c51-9cfd-7e6013f18f0e",
+      "webhookId": "f9a9deff-883b-418c-a37b-29ab8839f32e",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "Main assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH upserted_client AS (\n  INSERT INTO clients (\n    telegram_user_id,\n    first_name,\n    username,\n    current_stage,\n    last_message_at,\n    updated_at\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    '{{ ($node[\"Telegram Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n    '{{ ($node[\"Telegram Trigger\"].json.message.from.username || \"\").replace(/'/g, \"''\") }}',\n    'new_lead',\n    NOW(),\n    NOW()\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET\n    username = EXCLUDED.username,\n    last_message_at = NOW(),\n    updated_at = NOW()\n  RETURNING *\n), \nensured_state AS (\n  INSERT INTO conversation_state (\n    telegram_user_id,\n    sub_stage,\n    pattern_type,\n    qualification_signals\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    'q_surface',\n    NULL,\n    '{}'::jsonb\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET updated_at = NOW()\n  RETURNING *\n)\nSELECT\n  uc.current_stage,\n  uc.allow_reminders,\n  es.sub_stage,\n  es.pattern_type,\n  es.qualification_signals\nFROM upserted_client uc\nJOIN ensured_state es ON es.telegram_user_id = uc.telegram_user_id;",
+        "additionalFields": {}
+      },
+      "name": "Client State Loader",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -336
+      ],
+      "id": "d449cc6c-41ce-4574-8671-d47503f1133c",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    telegram_user_id,\n    role,\n    content,\n    created_at\n)\nVALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    'user',\n    '{{ ($node[\"Telegram Trigger\"].json.message.text || \"\").replace(/'/g,\"''\") }}',\n    NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        -384
+      ],
+      "id": "bdc08e09-44e5-46d6-9019-1759f60da436",
+      "name": "Save User Message",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Текущая цель раскопки:\n{{ $json.next_objective }}\n\nУже известно:\n{{ JSON.stringify($json.qualification_signals) }}",
+        "options": {
+          "systemMessage": "Ты Scout BrainCoach AI.\n\nТвоя единственная задача — собрать карту ситуации человека.\nФормулируй вопросы так, как спрашивает внимательный собеседник.\n\nИзбегай фраз:\n\n- что произошло прямо перед тем\n- что именно привело вас\n- опишите подробно\n- расскажите детально\n\nПредпочитай короткие естественные вопросы.\nТы НЕ консультант.\nТы НЕ преподаватель.\nТы НЕ психолог.\nТы НЕ продаешь услуги.\n\nЗапрещено:\n\n- давать советы\n- объяснять причины проблемы\n- ставить диагнозы\n- обучать\n- предлагать решения\n- рассказывать о BrainCoach\n- предлагать консультацию\n\nЗапрещено использовать:\n\n- отправная точка\n- данное состояние\n- указанная проблема\n- описанная ситуация\n- текущая цель\n- вышеупомянутое\n\nПиши живым разговорным языком.\nВопрос должен звучать как сообщение в Telegram.\n\nТебе передается:\n\nnext_objective\nknown_signals\n\nТвоя задача:\n\n1. Понять какое поле нужно заполнить\n2. Задать ОДИН короткий вопрос\n3. Получить недостающую информацию\n4. Продвинуть раскопку глубже\n\nПоля карты:\n\n- trigger_event\n- visible_problem\n- goal\n- stakes\n- emotional_driver\n- cost_of_inaction\n- past_attempts\n- investment_history\n- desired_state\n- readiness\n\nПравила:\n\n- один вопрос за сообщение\n- максимум 2 предложения\n- не более 30 слов\n- не перечисляй варианты ответа\n- не делай выводов\n- не интерпретируй\n- не повторяй вопрос другими словами\n\nЕсли информации недостаточно — уточняй.\n\nОтвечай обычным текстом.\nТолько вопросом."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        336
+      ],
+      "id": "bb4ef55c-4be4-4102-9fe9-7b627a5f14e2",
+      "name": "Scout Question Generator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $node[\"Telegram Trigger\"].json.message.text }}",
+        "options": {
+          "systemMessage": "Ты Scout Extractor.\n\nТвоя задача — извлекать новые сигналы из сообщения пользователя для заполнения qualification_signals.\n\nТебе передается сообщение пользователя.\n\nИзвлекай только то, что прямо присутствует в сообщении.\n\nНе придумывай факты.\n\nНе интерпретируй скрытые смыслы.\n\nНе ставь диагнозы.\n\nНе объясняй причины.\n\nНе делай выводов о человеке.\n\nЕсли сигнал можно определить уверенно — заполни его.\n\nЕсли сигнала нет — используй null.\n\nРазрешено извлекать частичные сигналы.\n\nНе требуй полного предложения.\n\nНапример:\n\nСообщение:\n\"готовиться к ЕНТ\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"goal\": \"подготовка к ЕНТ\"\n},\n\"depth_delta\": 10\n}\n\nСообщение:\n\"сын сильно переживает\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"emotional_driver\": \"сильное переживание\"\n},\n\"depth_delta\": 10\n}\n\nСообщение:\n\"занимаемся уже полгода\"\n\nОтвет:\n\n{\n\"new_signals\": {\n\"investment_history\": \"полгода подготовки\"\n},\n\"depth_delta\": 10\n}\n\nПоля для извлечения:\n\n* trigger_event\n* visible_problem\n* goal\n* stakes\n* emotional_driver\n* cost_of_inaction\n* past_attempts\n* investment_history\n* desired_state\n* readiness\n\nВерни JSON строго в формате:\n\n{\n\"new_signals\": {\n\"trigger_event\": null,\n\"visible_problem\": null,\n\"goal\": null,\n\"stakes\": null,\n\"emotional_driver\": null,\n\"cost_of_inaction\": null,\n\"past_attempts\": null,\n\"investment_history\": null,\n\"desired_state\": null,\n\"readiness\": null\n},\n\"depth_delta\": 0\n}\n\nВозвращай только JSON.\nНикакого текста вне JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -304,
+        -448
+      ],
+      "id": "c8a1ba59-e000-416e-b6be-bb215f97243f",
+      "name": "Scout Signal Extractor"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Scout Signal Extractor').first().json.output;\n\nconst parsed = JSON.parse(raw);\n\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -304
+      ],
+      "id": "169768db-e7af-431b-b60f-aa57710e07f3",
+      "name": "Parse Scout Signals"
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentSignals =\n$('Client State Loader').first().json.qualification_signals || {};\n\nconst extracted =\n$('Parse Scout Signals').first().json.new_signals || {};\n\nconst merged = { ...currentSignals };\n\nfor (const [key, value] of Object.entries(extracted)) {\n  if (value !== null) {\n    merged[key] = value;\n  }\n}\n\nreturn [\n  {\n    json: {\n      qualification_signals: merged\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        240
+      ],
+      "id": "d8cb15e8-2c16-4144-aeed-5647aab4387e",
+      "name": "Merge Scout Memory"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE conversation_state\nSET\n    qualification_signals = '{{ JSON.stringify($json.qualification_signals).replace(/'/g,\"''\") }}'::jsonb,\n    updated_at = NOW()\nWHERE telegram_user_id =\n'{{ $node[\"Telegram Trigger\"].json.message.from.id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -896,
+        -32
+      ],
+      "id": "5ac16c28-2066-4082-8074-e8083309ebc3",
+      "name": "Save Scout Memory",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    telegram_user_id,\n    role,\n    content,\n    created_at\n)\nVALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    'assistant',\n    '{{ ($json.output || \"\").replace(/'/g,\"''\") }}',\n    NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        320
+      ],
+      "id": "93f6b77e-4efe-4970-8cf9-5d2a400d4f0f",
+      "name": "Save Assistant Message",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{$node[\"Scout Question Generator\"].json.output}}",
+        "additionalFields": {}
+      },
+      "name": "Send Scout Question",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        880,
+        320
+      ],
+      "id": "5a5b693a-a755-4d4d-a47c-f9a6740eceb2",
+      "webhookId": "344c0471-e792-4c32-bc5e-c5574dd6931a",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "Main assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        528
+      ],
+      "id": "11cf12db-eecd-497b-ad1d-1d09a798c38e",
+      "name": "Scout LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": "wtSzJaX2q89eTfbp",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        -256
+      ],
+      "id": "ec3fe6fa-1b54-4be6-9022-7406a0f97251",
+      "name": "Extractor LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": "wtSzJaX2q89eTfbp",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const signals =\n$('Merge Scout Memory').first().json.qualification_signals || {};\n\nconst scoutFields = [\n  'trigger_event',\n  'visible_problem',\n  'goal',\n  'stakes',\n  'emotional_driver',\n  'cost_of_inaction',\n  'past_attempts',\n  'investment_history',\n  'desired_state',\n  'readiness'\n];\n\nlet nextObjective = null;\n\nfor (const field of scoutFields) {\n  if (\n    signals[field] === null ||\n    signals[field] === undefined ||\n    signals[field] === ''\n  ) {\n    nextObjective = field;\n    break;\n  }\n}\n\nreturn [\n  {\n    json: {\n      next_objective: nextObjective,\n      qualification_signals: signals\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        336
+      ],
+      "id": "329b0810-ccfc-4e11-81e2-8816884cb50d",
+      "name": "Next Objective Selector"
+    },
+    {
+      "parameters": {
+        "jsCode": "const memory =\n$('Merge Scout Memory').first().json.qualification_signals;\n\nreturn [\n  {\n    json: {\n      qualification_signals: memory\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        -32
+      ],
+      "id": "ea09bf5c-0d60-4a31-ad22-1ac030d1377a",
+      "name": "Verify Scout Memory"
+    },
+    {
+      "parameters": {
+        "content": "PRDEVELOPMENT WORKFLOW\n\nArchitect Integration\n\nSafe to modify",
+        "height": 208,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        -496
+      ],
+      "id": "2b9fa7b6-e230-4c9a-93b4-75ddd0d142a4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "const depth =\n$('Depth Calculator').first().json.depth_score;\n\nconst completed =\n$('Depth Calculator').first().json.completed_fields;\n\nlet scout_complete = false;\n\nif (depth >= 80) {\n  scout_complete = true;\n}\n\nif (completed >= 8) {\n  scout_complete = true;\n}\n\nreturn [\n  {\n    json: {\n      ...$('Depth Calculator').first().json,\n      scout_complete\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        432
+      ],
+      "id": "49b2212f-fc14-4a3a-ae49-5edaa5c3c430",
+      "name": "Scout Complete Detector"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "108d6734-e30d-445c-a8b4-06cd8916d6b5",
+              "leftValue": "={{ $json.scout_complete }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -336,
+        192
+      ],
+      "id": "e39fcb11-c947-49e4-99bc-ca9473a58f75",
+      "name": "IF - Scout Complete?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Карта клиента:\n\n{{ JSON.stringify($json.client_map) }}\n\nОсновная проблема:\n{{ $json.main_problem }}\n\nЦель:\n{{ $json.goal }}\n\nСтавки:\n{{ $json.stakes }}\n\nЭмоциональный драйвер:\n{{ $json.emotional_driver }}\n\nЖелаемое состояние:\n{{ $json.desired_state }}",
+        "options": {
+          "systemMessage": "Ты Architect BrainCoach AI.\n\nТы получаешь карту ситуации после работы Scout.\n\nРаботай только с фактами из карты.\n\nНе додумывай эмоции, мотивы, причины и выводы,\nесли их нет в карте.\n\nНе анализируй.\n\nНе консультируй.\n\nНе объясняй.\n\nНе предлагай решения.\n\nФормат ответа:\n\n1. Коротко отрази то, что уже известно.\n\n2. Покажи связь между фактами.\n\n3. Задай один вопрос,\nкоторый поможет увидеть ситуацию глубже.\n\n\nНе более 80 слов.\n\nНе используй нумерацию.\n\nНе используй слова:\n- известно\n- связь фактов\n- наблюдение\n- анализ\n- вывод\n\nПиши как живой собеседник в Telegram."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        48
+      ],
+      "id": "1d9f53eb-b5cf-418a-a5bb-ca671f830205",
+      "name": "Architect AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const detector =\n$('Scout Complete Detector').first().json;\n\nconst signals =\ndetector.qualification_signals || {};\n\nreturn [\n{\njson: {\n\nclient_map: signals,\n\nmain_problem:\nsignals.visible_problem || null,\n\ngoal:\nsignals.goal || null,\n\nstakes:\nsignals.stakes || null,\n\nemotional_driver:\nsignals.emotional_driver || null,\n\ndesired_state:\nsignals.desired_state || null,\n\nreadiness:\nsignals.readiness || null,\n\ndepth_score:\ndetector.depth_score || 0,\n\ncompleted_fields:\ndetector.completed_fields || 0\n\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        64
+      ],
+      "id": "25353087-ef3f-42fc-b2e3-4ec0b74a3058",
+      "name": "Architect Context Builder"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        32
+      ],
+      "id": "3175db17-8c32-4fb8-b836-349cdd12bf34",
+      "name": "Send Architect Message",
+      "webhookId": "0d22b003-532a-4e22-bc17-3858b87b496a",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "Main assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n    telegram_user_id,\n    role,\n    content,\n    created_at\n)\nVALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    'architect',\n    '{{ ($json.output || \"\").replace(/'/g,\"''\") }}',\n    NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        48
+      ],
+      "id": "5cd8cff8-abed-4738-ab83-4573064e2224",
+      "name": "Save Architect Message",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        208
+      ],
+      "id": "7f340423-8486-488f-81fe-ea6b137d5a3c",
+      "name": "Architect LLM",
+      "credentials": {
+        "openAiApi": {
+          "id": "wtSzJaX2q89eTfbp",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Depth Calculator": {
+      "main": [
+        [
+          {
+            "node": "Scout Complete Detector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Client State Loader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client State Loader": {
+      "main": [
+        [
+          {
+            "node": "Save User Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User Message": {
+      "main": [
+        [
+          {
+            "node": "Scout Signal Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scout Question Generator": {
+      "main": [
+        [
+          {
+            "node": "Save Assistant Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scout Signal Extractor": {
+      "main": [
+        [
+          {
+            "node": "Parse Scout Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Scout Signals": {
+      "main": [
+        [
+          {
+            "node": "Merge Scout Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Scout Memory": {
+      "main": [
+        [
+          {
+            "node": "Save Scout Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Scout Memory": {
+      "main": [
+        [
+          {
+            "node": "Verify Scout Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Assistant Message": {
+      "main": [
+        [
+          {
+            "node": "Send Scout Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Scout Question": {
+      "main": [
+        []
+      ]
+    },
+    "Scout LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scout Question Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scout Signal Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next Objective Selector": {
+      "main": [
+        [
+          {
+            "node": "Scout Question Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Scout Memory": {
+      "main": [
+        [
+          {
+            "node": "Depth Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scout Complete Detector": {
+      "main": [
+        [
+          {
+            "node": "IF - Scout Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Scout Complete?": {
+      "main": [
+        [
+          {
+            "node": "Architect Context Builder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Next Objective Selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Architect Context Builder": {
+      "main": [
+        [
+          {
+            "node": "Architect AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Architect AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Architect Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Architect Message": {
+      "main": [
+        [
+          {
+            "node": "Send Architect Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Architect LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Architect AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a4acee73-bb0f-4dfb-ac9a-86bcbb03cf24",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48d6698760d67e9b0cb2984cfccb6ee712afdcc3e47735c395f68c6ceaddea3c"
+  },
+  "id": "Vq2ICvZAyxqGjYKQ",
+  "tags": []
+}
