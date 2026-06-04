@@ -1,3 +1,17 @@
+## DEC-003
+
+Title:
+Transition from Thesis-First to Phenomenon-First Content
+
+Reason:
+Research and early performance data suggest that contradiction creates stronger curiosity than conclusions.
+
+Impact:
+All future hooks must begin with observation and contradiction before explanation.
+
+Status:
+Accepted
+
 ## DEC-002
 
 Date: 2026-06-03

@@ -1,3 +1,25 @@
+## Milestone:BrainCoach Knowledge OS v1.0 Foundation
+
+
+Date:
+2026-06-03
+
+Status:
+Released
+
+Scope:
+- Canon
+- Foundation
+- Ontology
+- Research Framework
+- Governance
+- ADR Process
+- Decision Log
+- Knowledge Objects Registry
+
+Result:
+Single Source of Truth established
+
 # BrainCoach Knowledge OS v1.0 - Status
 
 Status: Operational

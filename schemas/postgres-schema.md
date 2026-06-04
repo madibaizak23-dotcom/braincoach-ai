@@ -350,3 +350,53 @@ Business logic must never be stored inside prompts.
 Теперь у вас есть полный текст документа. Сохраните его как `.md` файл — и можно приступать к работе! Есть ли еще что-то, что нужно подготовить для реализации этого плана в базе данных?
 
 
+## Knowledge OS Governance Tables
+
+Added in Knowledge OS v1.0 operationalization.
+
+### knowledge_objects
+
+Purpose:
+
+Operational catalog of BrainCoach Knowledge Objects.
+
+Source of Truth:
+
+Knowledge Objects Registry (GitHub)
+
+Database Role:
+
+Operational mirror used for synchronization, governance queries, and future retrieval systems.
+
+Implemented via:
+
+- migrations/001_create_knowledge_objects.sql
+- migrations/003_add_unique_constraint_knowledge_objects.sql
+
+---
+
+### decision_log
+
+Purpose:
+
+Operational mirror of BrainCoach Decision Log.
+
+Source of Truth:
+
+braincoach-docs/05_decisions/decision-log/
+
+Database Role:
+
+Governance persistence and future synchronization target.
+
+Implemented via:
+
+- migrations/002_create_decision_log.sql
+
+---
+
+Migration History
+
+- 001_create_knowledge_objects.sql
+- 002_create_decision_log.sql
+- 003_add_unique_constraint_knowledge_objects.sql
