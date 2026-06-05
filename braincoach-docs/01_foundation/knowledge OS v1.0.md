@@ -20,6 +20,38 @@ Scope:
 Result:
 Single Source of Truth established
 
+## Milestone: Research OS Foundation
+
+Date:
+2026-06-05
+
+Status:
+Released
+
+Scope:
+- Reality Filter
+- Signal Dictionary
+- Phenomenon Registry
+- Season Registry
+- Content Factory
+- PostgreSQL Research Layer
+
+Result:
+Research First Architecture established
+
+Event
+→ Observation
+→ Signal
+→ Phenomenon
+→ Research
+→ Knowledge
+
+Knowledge
+→ Content Factory
+→ Distribution
+→ Feedback
+→ Reality
+
 # BrainCoach Knowledge OS v1.0 - Status
 
 Status: Operational
@@ -39,6 +71,8 @@ The system is built to preserve a single source of truth, prevent meaning drift,
 
 ## BrainCoach Knowledge OS v1.0 — Stop Rule
 
+
+
 Architecture Stability > Architecture Expansion
 
 v1.0 is complete.
@@ -54,20 +88,29 @@ Allowed:
 - Knowledge Objects.
 - Operational Data.
 
+
+
 ## Layer 1 — Knowledge
 
 **Source of Truth:** GitHub
 
 This layer contains the stable conceptual system of BrainCoach:
 
-- Canon.
-- Ontology.
-- Phenomenon Registry.
-- Season Registry.
-- Social Intelligence.
-- Architecture.
+Canon
+Ontology
+Signal Dictionary
+Phenomenon Registry
+Season Registry
+Models
+Architecture
+
+Knowledge defines the meaning of the system.
 
 Knowledge is changed through Pull Request, Review, and Merge.
+
+Research may generate candidate updates.
+
+Only validated knowledge can enter this layer.
 
 ---
 
@@ -151,6 +194,7 @@ No object exists in the system without:
 
 Allowed classes:
 
+- Intelligence.
 - Knowledge.
 - Research.
 - Governance.
@@ -158,6 +202,7 @@ Allowed classes:
 - Infrastructure.
 
 ---
+
 
 ## Ontological Rule
 
@@ -172,6 +217,71 @@ Forbidden:
 ## Flow Separation
 
 Do not mix the two flows:
+
+
+
+## Reality Flow
+
+BrainCoach operates through two connected flows.
+
+### Reality Flow
+
+Reality
+
+↓
+
+Event
+
+↓
+
+Observation
+
+↓
+
+Signal
+
+↓
+
+Phenomenon
+
+↓
+
+Research
+
+↓
+
+Knowledge
+
+### Delivery Flow
+
+Knowledge
+
+↓
+
+Content Factory
+
+↓
+
+Channels
+
+↓
+
+Audience
+
+↓
+
+Feedback
+
+↓
+
+Reality
+
+The first flow creates understanding.
+
+The second flow distributes understanding.
+
+Confusing these flows leads to content production without knowledge production.
+
 
 ### Knowledge Flow
 
@@ -258,6 +368,8 @@ It is the starting point for controlled evolution of the entire Knowledge OS.
 ---
 
 ## Core Principle
+
+
 
 BrainCoach Knowledge OS is not a set of tools.  
 It is a system that knows what it knows, why it knows it, and how that knowledge changes over time.

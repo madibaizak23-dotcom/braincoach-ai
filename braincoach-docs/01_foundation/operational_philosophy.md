@@ -1,103 +1,179 @@
+# Operational Philosophy v2.0
 
-# Operational Philosophy
+## Core Mission
+
+BrainCoach exists to understand how people learn, adapt, develop, and realize their potential.
+
+The system does not optimize for content production.
+
+The system optimizes for understanding.
+
+Content is a distribution mechanism for understanding.
+
+---
+
+## Reality First
+
+Reality is upstream.
+
+Content is downstream.
+
+The system starts from reality.
+
+Not from topics.
+
+Not from trends.
+
+Not from content calendars.
+
+Not from assumptions.
+
+Every meaningful insight must originate from observed reality.
+
+---
+
+## Phenomena Over Topics
+
+Topics are endless.
+
+Phenomena are scarce.
+
+BrainCoach does not search for topics.
+
+BrainCoach searches for phenomena.
+
+A phenomenon reveals a hidden mechanism.
+
+A mechanism reveals how reality works.
+
+---
+
+## Signals Before Opinions
+
+Opinions are interpretations.
+
+Signals are observations.
+
+The system prioritizes signals over opinions.
+
+Interpretations may change.
+
+Signals remain evidence.
+
+---
+
+## Research Before Production
+
+Most content systems create content first and analyze later.
+
+BrainCoach analyzes first and publishes later.
+
+Research precedes production.
+
+Understanding precedes communication.
+
+---
 
 ## BrainCoach Change Loop
-Наблюдение
-→ Интерес
-→ Исследование
-→ Изменение модели мира
-→ Улучшенное действие
-→ Новая реальность
+
+Observation
+
+↓
+
+Curiosity
+
+↓
+
+Investigation
+
+↓
+
+Model Update
+
+↓
+
+Improved Action
+
+↓
+
+New Reality
+
+↓
+
+New Observation
+
+The loop never ends.
+
+---
+
+## Knowledge Before Content
+
+Knowledge is the primary product.
+
+Content is a secondary product.
+
+The purpose of content is to transfer understanding.
+
+If knowledge production stops, content quality eventually collapses.
+
+---
+
+## Reality Processing System
+
+BrainCoach is not a content machine.
+
+BrainCoach is not an educational platform.
+
+BrainCoach is a reality processing system.
+
+Its purpose is to convert reality into understanding.
+
+Everything else is downstream.
+
+---
 
 ## Strategic Position
 
-BrainCoach не продаёт готовые ответы.
+BrainCoach does not sell answers.
 
-BrainCoach помогает обнаруживать и исследовать механизмы, которые стоят между человеком и его результатом.
+BrainCoach investigates mechanisms.
 
-Мы не начинаем с советов.
+We do not begin with advice.
 
-Мы начинаем с наблюдения.
+We begin with observation.
 
-Не лечим симптомы.
+We do not optimize for certainty.
 
-Исследуем причины.
+We optimize for better models of reality.
 
-Не обещаем результат заранее.
+Our role is to make hidden mechanisms visible.
 
-Помогаем находить условия, при которых результат становится возможным.
+What becomes visible becomes manageable.
 
-Наша задача — сделать скрытые механизмы видимыми.
+---
 
-Потому что то, что становится видимым, становится управляемым.
+## Operational Rule
 
-...
+Every initiative must answer:
 
-## First Screen Principle
-...
+What reality are we observing?
 
-## Mystery Before Mechanism
-...
+What signal have we detected?
 
-## Recognition Before Explanation
-...
+What phenomenon does it suggest?
 
-## Research Before Advice
-...
-## BrainCoach First Screen Principle v1.0
+What mechanism might explain it?
 
-Первый экран не объясняет.
+What new understanding does it create?
 
-Первый экран не учит.
+If these questions cannot be answered, the work should not proceed.
 
-Первый экран не делает вывод.
+---
 
-Первый экран показывает наблюдаемое противоречие.
+## Core Principle
 
-Формула:
+The system must always remain closer to reality than to content.
 
-Факт A
+Reality is upstream.
 
-≠
-
-Факт B
-
-Если первый экран уже содержит объяснение или вывод, любопытство закрывается раньше начала исследования.
-
-Цель первого экрана:
-
-не убедить
-
-а вызвать вопрос.
-
-## BrainCoach Change Loop
-
-
-
-
-Наблюдение
-
-↓
-
-Интерес
-
-↓
-
-Исследование
-
-↓
-
-Изменение модели мира
-
-↓
-
-Улучшенное действие
-
-↓
-
-Новая реальность
-
-## VISUAL WORLD PRINCIPLE
-BrainCoach builds attention around phenomena, not personality.
-Malik appears rarely and intentionally: at the start of a season, on a major hypothesis, when inviting people into research, and when closing a series of observations.
-The visual world should feel larger than the author, so the audience returns for understanding, not for the person in the frame.
+Content is downstream.

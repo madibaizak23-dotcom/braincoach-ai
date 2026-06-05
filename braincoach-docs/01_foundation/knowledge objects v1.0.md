@@ -36,6 +36,7 @@ Objects without these fields are invalid.
 
 ## Allowed Classes
 
+* Intelligence
 * Knowledge
 * Research
 * Governance
@@ -46,14 +47,15 @@ Objects without these fields are invalid.
 
 ## Knowledge Objects
 
-| Object Type                    | Class     | Owner      | Source of Truth | Lifecycle | Status   |
-| ------------------------------ | --------- | ---------- | --------------- | --------- | -------- |
-| Canon                          | Knowledge | Canon      | GitHub          | active    | accepted |
-| Ontology                       | Knowledge | Ontology   | GitHub          | active    | accepted |
-| Phenomenon Registry            | Knowledge | Research   | GitHub          | active    | accepted |
-| Season Registry                | Knowledge | Research   | GitHub          | active    | accepted |
-| Social Intelligence Dictionary | Knowledge | Knowledge  | GitHub          | active    | accepted |
-| BrainCoach Knowledge OS        | Knowledge | Governance | GitHub          | active    | accepted |
+| Object Type                    | Class     | Owner      | Source of Truth | Lifecycle                                | Status   |
+| ------------------------------ | --------- | ---------- | --------------- | ---------------------------------------- | -------- |
+| Canon                          | Knowledge | Canon      | GitHub          | active                                   | accepted |
+| Ontology                       | Knowledge | Ontology   | GitHub          | active                                   | accepted |
+| Phenomenon Registry            | Knowledge | Research   | GitHub          | active                                   | accepted |
+| Season Registry                | Knowledge | Research   | GitHub          | active                                   | accepted |
+| Social Intelligence Dictionary | Knowledge | Knowledge  | GitHub          | active                                   | accepted |
+| BrainCoach Knowledge OS        | Knowledge | Governance | GitHub          | active                                   | accepted |
+| Model                          | Knowledge | Research   | GitHub          | draft → validated → accepted → canonical | active   |
 
 ---
 
@@ -68,26 +70,38 @@ Objects without these fields are invalid.
 
 ---
 
+## Intelligence Objects
+
+| Object Type | Class        | Owner        | Source of Truth     | Lifecycle                                 | Status |
+| ----------- | ------------ | ------------ | ------------------- | ----------------------------------------- | ------ |
+| Signal Feed | Intelligence | Intelligence | PostgreSQL          | active                                    | active |
+| Signal      | Intelligence | Intelligence | GitHub + PostgreSQL | candidate → validated → archived          | active |
+| Trend       | Intelligence | Intelligence | GitHub + PostgreSQL | candidate → tracked → accepted → archived | active |
+| Pattern     | Intelligence | Intelligence | GitHub              | draft → validated → accepted              | active |
+
+---
+
 ## Research Objects
 
-| Object Type | Class    | Owner      | Source of Truth     | Lifecycle                                          | Status  |
-| ----------- | -------- | ---------- | ------------------- | -------------------------------------------------- | ------- |
-| Phenomenon  | Research | Research   | GitHub + PostgreSQL | draft → observed → testing → validated → canonical | active  |
-| Observation | Research | Research   | PostgreSQL          | active                                             | planned |
-| Experiment  | Research | PostgreSQL | PostgreSQL          | planned                                            | planned |
-| Outcome     | Research | PostgreSQL | PostgreSQL          | planned                                            | planned |
-| Season      | Research | Research   | GitHub + PostgreSQL | draft → active → closing → closed → archived       | active  |
+| Object Type | Class    | Owner    | Source of Truth     | Lifecycle                                    | Status |
+| ----------- | -------- | -------- | ------------------- | -------------------------------------------- | ------ |
+| Event       | Research | Research | PostgreSQL          | observed → archived                          | active |
+| Observation | Research | Research | PostgreSQL          | observed → validated → archived              | active |
+| Phenomenon  | Research | Research | GitHub + PostgreSQL | candidate → observed → tested → canonical    | active |
+| Experiment  | Research | Research | PostgreSQL          | planned → running → completed → archived     | active |
+| Outcome     | Research | Research | PostgreSQL          | observed → validated → archived              | active |
+| Season      | Research | Research | GitHub + PostgreSQL | draft → active → closing → closed → archived | active |
 
 ---
 
 ## Memory Objects
 
-| Object Type | Class  | Owner  | Source of Truth | Lifecycle | Status |
-| ----------- | ------ | ------ | --------------- | --------- | ------ |
-| Client      | Memory | AI CRM | PostgreSQL      | active    | active |
-| Event       | Memory | AI CRM | PostgreSQL      | active    | active |
-| Message     | Memory | AI CRM | PostgreSQL      | active    | active |
-| Memory Fact | Memory | AI CRM | PostgreSQL      | active    | active |
+| Object Type  | Class  | Owner  | Source of Truth | Lifecycle | Status |
+| ------------ | ------ | ------ | --------------- | --------- | ------ |
+| Client       | Memory | AI CRM | PostgreSQL      | active    | active |
+| Client Event | Memory | AI CRM | PostgreSQL      | active    | active |
+| Message      | Memory | AI CRM | PostgreSQL      | active    | active |
+| Memory Fact  | Memory | AI CRM | PostgreSQL      | active    | active |
 
 ---
 
@@ -101,6 +115,43 @@ Objects without these fields are invalid.
 | Cloud Run         | Infrastructure | Infrastructure | Google Cloud    | active    | active |
 | Cloud SQL         | Infrastructure | Infrastructure | Google Cloud    | active    | active |
 | Secret Manager    | Infrastructure | Infrastructure | Google Cloud    | active    | active |
+
+---
+
+## Object Dependency Rule
+
+No object may exist in isolation.
+
+Required relationships:
+
+Event
+→ Observation
+
+Observation
+→ Signal
+
+Signal
+→ Phenomenon
+
+Phenomenon
+→ Model
+
+Experiment
+→ Phenomenon
+
+Outcome
+→ Experiment
+
+Season
+→ Phenomenon
+
+Client Event
+→ Client
+
+Memory Fact
+→ Client
+
+Objects without valid relationships are considered incomplete.
 
 ---
 
