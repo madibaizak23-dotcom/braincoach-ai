@@ -1,6 +1,6 @@
-# BRAINCOACH KNOWLEDGE OS SNAPSHOT
+# BRAINCOACH SYSTEM SNAPSHOT
 
-Date: 2026-06-05
+Date: 2026-06-057
 
 Status: Active Reference
 
@@ -265,6 +265,243 @@ Automation serves Knowledge.
 Knowledge does not serve Automation.
 
 ---
+
+# Architecture Status
+
+Knowledge OS
+
+Status:
+
+Operational
+
+---
+
+Research OS
+
+Status:
+
+Formalized
+
+Core Flow:
+
+Reality
+
+↓
+
+Observation
+
+↓
+
+Deviation
+
+↓
+
+Signal
+
+↓
+
+Phenomenon
+
+↓
+
+Research
+
+↓
+
+Model
+
+---
+
+Content Factory
+
+Status:
+
+Formalized
+
+Modules:
+
+01 Intake
+
+02 Extraction
+
+03 Asset Design
+
+04 Generation
+
+05 Feedback
+
+---
+
+Automation Architecture
+
+Status:
+
+Formalized
+
+Documents:
+
+01 Knowledge Objects
+
+02 Object Relationships
+
+03 Object States
+
+04 PostgreSQL Mapping
+
+05 Domain Architecture
+
+06 Storage Architecture
+
+07 Domain Interfaces
+
+08 Agent Architecture
+
+---
+
+# Core Domains
+
+Governance
+
+Purpose:
+
+Protect consistency.
+
+---
+
+Research
+
+Purpose:
+
+Transform reality into knowledge.
+
+---
+
+Business
+
+Purpose:
+
+Manage human interaction and outcomes.
+
+---
+
+Operations
+
+Purpose:
+
+Transform knowledge into assets.
+
+---
+
+# Storage Architecture
+
+GitHub
+
+↓
+
+Knowledge
+
+PostgreSQL
+
+↓
+
+Research
+
+Business
+
+Operations
+
+pgvector
+
+↓
+
+Retrieval
+
+n8n
+
+↓
+
+Orchestration
+
+Vertex AI
+
+↓
+
+Reasoning
+
+---
+
+# Major Architectural Discovery
+
+BrainCoach is no longer evolving as a content system.
+
+BrainCoach is evolving as a signal detection, research and knowledge production system.
+
+Content is a downstream asset.
+
+Research is upstream.
+
+Reality remains the primary source.
+
+---
+
+# Current Production Bottleneck
+
+Knowledge Architecture
+
+Resolved
+
+Research Architecture
+
+Resolved
+
+Automation Architecture
+
+Resolved
+
+Current Constraints:
+
+* Offer Discovery
+* Research Loop MVP
+* Content Factory MVP
+* Content → Consultation Pipeline
+* Consultation → Revenue Pipeline
+
+---
+
+# Current Strategic Objective
+
+Launch the first self-improving research loop.
+
+Signal
+
+↓
+
+Phenomenon
+
+↓
+
+Research
+
+↓
+
+Asset
+
+↓
+
+Feedback
+
+↓
+
+Observation
+
+↓
+
+Signal
+
+Objective:
+
+Validate that BrainCoach can continuously transform reality into knowledge and knowledge into measurable outcomes.
+
 
 # Current Constraint
 

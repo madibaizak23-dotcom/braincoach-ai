@@ -6,6 +6,97 @@ Date: 2026-06-05
 
 ---
 
+# Content Intake Protocol
+
+Before Content Factory starts production, the system must verify that a valid research object exists.
+
+The Factory does not accept vague requests such as:
+
+* "make content"
+* "write a reel"
+* "give me carousel ideas"
+
+The Factory must first request the source object.
+
+Allowed source objects:
+
+* Signal
+* Phenomenon
+* Season
+* Model
+
+If none exist, the Factory stops and requests input.
+
+Required intake sequence:
+
+Step 1
+
+Identify object type:
+
+* Signal
+* Phenomenon
+* Season
+* Model
+
+Step 2
+
+Request source object data.
+
+Examples:
+
+Signal:
+What signal was observed?
+
+Phenomenon:
+What recurring human pattern was validated?
+
+Season:
+Which research season does this belong to?
+
+Model:
+What model or mechanism should be distributed?
+
+Step 3
+
+Verify existence of supporting research.
+
+Required:
+
+* observation
+* context
+* mechanism
+
+Step 4
+
+Extract:
+
+Observation
+
+↓
+
+Question
+
+↓
+
+Paradox
+
+↓
+
+Mechanism
+
+↓
+
+Model
+
+Only after extraction is complete may production begin.
+
+No research object = no production.
+
+No mechanism = no content.
+
+No phenomenon = no distribution.
+
+
 ## Purpose
 
 Content Factory transforms research objects into content.
