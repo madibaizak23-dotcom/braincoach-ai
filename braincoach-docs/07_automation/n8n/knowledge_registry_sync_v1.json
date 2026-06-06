@@ -1,0 +1,367 @@
+{
+  "name": "knowledge_registry_sync_v1.",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\n// собираем ВСЕ файлы из ВСЕХ коммитов push\n\nconst modified = [];\n\nfor (const commit of (body.commits || [])) {\n\n  modified.push(...(commit.modified || []));\n  modified.push(...(commit.added || []));\n  modified.push(...(commit.removed || []));\n\n}\n\n// удаляем дубликаты\n\nconst uniqueModified = [...new Set(modified)];\n\nlet object_type = 'unknown';\n\nif (uniqueModified.some(f => f.includes('00_canon'))) {\n  object_type = 'canon';\n}\nelse if (uniqueModified.some(f => f.includes('01_foundation'))) {\n  object_type = 'foundation';\n}\nelse if (uniqueModified.some(f => f.includes('02_ontology'))) {\n  object_type = 'ontology';\n}\nelse if (uniqueModified.some(f => f.includes('03_knowledge'))) {\n  object_type = 'knowledge';\n}\nelse if (uniqueModified.some(f => f.includes('04_domain'))) {\n  object_type = 'domain';\n}\nelse if (uniqueModified.some(f => f.includes('05_operations'))) {\n  object_type = 'operations';\n}\nelse if (uniqueModified.some(f => f.includes('06_analytics'))) {\n  object_type = 'analytics';\n}\nelse if (uniqueModified.some(f => f.includes('07_automation'))) {\n  object_type = 'automation';\n}\n\nreturn [{\n  json: {\n\n    event: headers['x-github-event'],\n\n    repository: body.repository?.name,\n\n    branch: body.ref?.replace('refs/heads/', ''),\n\n    commit_id: body.after,\n\n    commit_message: body.head_commit?.message,\n\n    timestamp: body.head_commit?.timestamp,\n\n    object_type,\n\n    modified_files: uniqueModified,\n\n    files_count: uniqueModified.length\n\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        -112
+      ],
+      "id": "45d7a1e0-6373-4084-a1ab-535f5fd4d6ce",
+      "name": "Knowledge Event Parser"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "knowledge_events",
+          "mode": "list",
+          "cachedResultName": "knowledge_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_type": "={{$json.event}}",
+            "repository": "={{$json.repository}}",
+            "branch": "={{$json.branch}}",
+            "commit_id": "={{$json.commit_id}}",
+            "event_timestamp": "={{$json.timestamp}}",
+            "metadata": "={{ JSON.stringify($json) }}",
+            "object_type": "={{$json.object_type}}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repository",
+              "displayName": "repository",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "commit_id",
+              "displayName": "commit_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_timestamp",
+              "displayName": "event_timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "object_type",
+              "displayName": "object_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        -192
+      ],
+      "id": "385f64ea-ce42-4d9a-bbfc-67f47b9b6cbd",
+      "name": "Knowledge Event Store",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-sync",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -784,
+        -128
+      ],
+      "id": "874bb0d9-b257-4313-9177-f8c444b37331",
+      "name": "GitHub Trigger",
+      "webhookId": "898d3bb0-224a-4249-951c-2c4aa3e1183e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $json.modified_files || [];\n\nreturn files.map(path => {\n\n  let object_type = 'unknown';\n\n  // Core Knowledge OS\n\n  if (path.includes('00_canon'))\n    object_type = 'canon';\n\n  else if (path.includes('01_foundation'))\n    object_type = 'foundation';\n\n  else if (path.includes('02_ontology'))\n    object_type = 'ontology';\n\n  else if (path.includes('03_knowledge/01'))\n    object_type = 'research';\n\n  else if (path.includes('03_knowledge/02'))\n    object_type = 'intelligence';\n\n  else if (path.includes('03_knowledge/03'))\n    object_type = 'registry';\n\n  else if (path.includes('03_knowledge/04'))\n    object_type = 'decision';\n\n  else if (path.includes('03_knowledge'))\n    object_type = 'knowledge';\n\n  // Domains\n\n  else if (path.includes('04_domain'))\n    object_type = 'domain';\n\n  // Operations\n\n  else if (path.includes('05_operations'))\n    object_type = 'operations';\n\n  // Analytics\n\n  else if (path.includes('06_analytics'))\n    object_type = 'analytics';\n\n  // Automation\n\n  else if (path.includes('07_automation'))\n    object_type = 'automation';\n\n  // Repository service folders\n\n  else if (path.includes('/active/'))\n    object_type = 'active';\n\n  else if (path.includes('/archive/'))\n    object_type = 'archive';\n\n  else if (path.includes('/architecture/'))\n    object_type = 'architecture';\n\n  const filename = path\n    .split('/')\n    .pop()\n    .replace('.md', '')\n    .replace('.txt', '')\n    .replace('.pdf', '');\n\n  return {\n    json: {\n      object_name: filename,\n      object_type,\n      object_path: path,\n      status: 'active',\n      discovered_at: new Date().toISOString()\n    }\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -32
+      ],
+      "id": "2280c2e4-254d-49ad-b8d4-c237bc826fb2",
+      "name": "Extract Assets"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "knowledge_assets",
+          "mode": "list",
+          "cachedResultName": "knowledge_assets"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "object_type": "={{$json.object_type}}",
+            "object_name": "={{$json.object_name}}",
+            "object_path": "={{$json.object_path}}",
+            "version": "v1",
+            "status": "={{$json.status}}",
+            "first_seen": "={{$json.discovered_at}}",
+            "last_updated": "={{$json.discovered_at}}",
+            "metadata": "={{$json}}"
+          },
+          "matchingColumns": [
+            "object_path"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "object_type",
+              "displayName": "object_type",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "object_name",
+              "displayName": "object_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "object_path",
+              "displayName": "object_path",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "first_seen",
+              "displayName": "first_seen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_updated",
+              "displayName": "last_updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "45cfd6dd-8a1a-40e5-a7d4-81cea11ad022",
+      "name": "Knowledge Asset Store",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Knowledge Event Parser": {
+      "main": [
+        [
+          {
+            "node": "Extract Assets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Knowledge Event Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Trigger": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Event Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Assets": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Asset Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "52cd2fe4-a0a1-4922-b0de-e06199c57962",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48d6698760d67e9b0cb2984cfccb6ee712afdcc3e47735c395f68c6ceaddea3c"
+  },
+  "id": "4wgV0lQh7jO3Ero6",
+  "tags": []
+}
