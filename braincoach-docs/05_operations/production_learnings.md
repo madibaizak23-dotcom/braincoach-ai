@@ -209,7 +209,6 @@ Do not store opinions.
 
 Store operational discoveries.
 
-Test Asset Discovery
-knowledge asset test
+Discovery:
 
-Test update
+Asset registry correctly identifies and registers newly created knowledge objects through GitHub push events.
