@@ -209,3 +209,4 @@ Do not store opinions.
 
 Store operational discoveries.
 
+Test Asset Discovery
