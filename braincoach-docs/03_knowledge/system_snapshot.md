@@ -520,3 +520,5 @@ Consultation → Revenue Pipeline
 # Current Strategic Question
 
 How do we transform Self Learning Capability into a repeatable offer that parents are willing to buy?
+
+test
