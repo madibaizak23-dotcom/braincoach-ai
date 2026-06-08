@@ -24,6 +24,201 @@ Shifted system focus from content production toward learning systems and knowled
 
 ## 2026-06-06
 
+### Database Governance Formalized
+
+Status: Completed
+
+Artifacts Added:
+
+* postgres-schema.md
+* braincoach_owned_tables.md
+
+Outcome:
+
+Explicit separation established between:
+
+* BrainCoach application data
+* n8n runtime infrastructure
+
+Database ownership boundaries documented.
+
+Future graph architecture will operate exclusively on BrainCoach-owned objects.
+
+---
+
+
+## 2026-06-08
+
+### Tracker Layer MVP Started
+
+Status: Completed
+
+Objective:
+
+Create the first persistent memory layer for BrainCoach Tracker.
+
+Implemented:
+
+* tracker_entries table
+* user-linked note storage
+* timestamped entries
+* entry types
+* tag support
+
+First Recorded Insight:
+
+"Интервью является первым узлом траектории"
+
+Outcome:
+
+BrainCoach can now persist observations, ideas, hypotheses and insights independently of chat history.
+
+Significance:
+
+This is the first operational component of the future Trajectory Layer and Personal Knowledge Memory System.
+
+### Signal Candidate Staging Table Added
+
+Status: Completed
+
+Objective:
+
+Create a safe staging layer between observations and confirmed signals.
+
+Implemented:
+
+* research_signal_candidates table
+* confidence scoring field
+* candidate lifecycle status
+* source links to observations and tracker_entries
+* BrainCoach-owned table documentation
+
+Outcome:
+
+Tracker can now evolve from raw observation capture toward signal detection without immediately promoting every observation into a formal signal.
+
+Significance:
+
+This is the first database object supporting the future path:
+
+Observation
+
+↓
+
+Signal Candidate
+
+↓
+
+Signal
+
+↓
+
+Deviation
+
+↓
+
+Phenomenon
+
+
+## 2026-06-07
+
+### Stage 2 — Full Repository Registry Completed
+
+Status: Completed
+
+Objective:
+
+Populate knowledge_assets with the complete inventory of BrainCoach Knowledge OS.
+
+Implemented:
+
+* Full repository scan workflow
+* GitHub API repository tree extraction
+* Repository-wide asset classification
+* PostgreSQL registry synchronization
+* object_path based upsert strategy
+
+Registry Cleanup:
+
+* Legacy path duplicates removed
+* Historical folder naming inconsistencies reconciled
+* Repository registry normalized
+
+Results:
+
+* 104 active Knowledge Objects synchronized
+* 104 unique object paths validated
+* Full repository inventory established
+* knowledge_assets became repository-wide source of truth
+
+Registry Coverage:
+
+* Canon
+* Foundation
+* Ontology
+* Research
+* Intelligence
+* Registries
+* Decisions
+* Domains
+* Operations
+* Automation
+
+Outcome:
+
+BrainCoach Knowledge Registry transitioned from event-based discovery to full repository awareness.
+
+Current Synchronization Model:
+
+GitHub Repository
+
+↓
+
+Full Repository Registry
+
+↓
+
+knowledge_assets
+
+↓
+
+Future Relationship Layer
+
+Next Stage:
+
+Stage 3 — Knowledge Relationships
+
+Goals:
+
+* relationship extraction
+* object graph construction
+* dependency mapping
+* semantic navigation layer
+
+Result:
+
+BrainCoach Knowledge OS now maintains a complete authoritative registry of repository knowledge assets.
+
+2026-06-07
+
+DEC-007 Accepted
+
+Offer Discovery Layer introduced.
+
+Reason:
+
+Stage 2 Full Repository Registry completed.
+
+Knowledge production is no longer the primary bottleneck.
+
+Current constraint shifted to:
+
+Knowledge → Offer → Revenue
+
+Outcome:
+
+Offer Discovery becomes a formal layer between Knowledge and Business.
+
 ### Content Factory Formalized
 
 Status: Completed
@@ -234,6 +429,7 @@ Expected Result:
 knowledge_assets becomes the authoritative registry of all BrainCoach Knowledge Objects.
 
 ---
+
 
 ## Current Strategic Direction
 

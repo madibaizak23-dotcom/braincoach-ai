@@ -1,6 +1,6 @@
 # BRAINCOACH SYSTEM SNAPSHOT
 
-Date: 2026-06-057
+Date: 2026-06-07
 
 Status: Active Reference
 
@@ -15,20 +15,32 @@ Status: Active Reference
 02_ontology
 
 03_knowledge
-01_research
-02_intelligence
-03_registries
-04_decisions
+
+ 01_research
+
+ 02_intelligence
+
+ 03_registries
+
+ 04_decisions
 
 04_domain
-01_marketing
-02_education
-03_community
+
+ 01_marketing
+
+ 02_education
+
+ 03_community
+
+ 04_products
 
 05_operations
-planning
-priorities
-reviews
+
+ planning
+
+ priorities
+
+ reviews
 
 06_analytics
 
@@ -36,18 +48,61 @@ reviews
 
 ---
 
+# Knowledge Registry Status
+
+Stage:
+
+Stage 2 Completed
+
+Registry Status:
+
+Operational
+
+Synchronization:
+
+GitHub → PostgreSQL
+
+Registry Mode:
+
+Full Repository Registry
+
+Current Registry Coverage:
+
+104 active knowledge objects
+
+104 unique object paths
+
+Repository Coverage:
+
+* Canon
+* Foundation
+* Ontology
+* Research
+* Intelligence
+* Registries
+* Decisions
+* Domains
+* Operations
+* Automation
+
+Result:
+
+knowledge_assets is now the authoritative registry of BrainCoach Knowledge Objects.
+
+---
+
 # Major Discovery
 
 Discovery Sprint 2026-06 identified a new central object for BrainCoach.
 
-Previous focus:
+Previous Focus:
 
-* memory
-* attention
-* concentration
-* exam preparation
+* Memory
+* Attention
+* Concentration
+* Exam Preparation
 
-Current focus:
+Current Focus:
 
 SELF_LEARNING_CAPABILITY
 
@@ -59,7 +114,7 @@ SELF_LEARNING_CAPABILITY
 
 Definition:
 
-Ability to independently acquire new knowledge, skills and competencies without constant external management.
+Ability to independently acquire new knowledge, skills, and competencies without constant external management.
 
 Core Question:
 
@@ -115,10 +170,9 @@ P9. Direction Matters
 
 Intellectual Roots:
 
-* Architecture of Mathematics
+* Mathematics
 * Set Theory
 * Logic
-* DOUT
 * Theory of Constraints
 * Neuroplasticity
 * BrainCoach Practice
@@ -137,10 +191,10 @@ How does Self Learning Capability emerge and develop?
 
 Research Assets:
 
-* observations
-* hypotheses
-* mechanisms
-* longitudinal cases
+* Observations
+* Hypotheses
+* Mechanisms
+* Longitudinal Cases
 
 ---
 
@@ -162,39 +216,13 @@ Candidate for central Knowledge Graph object.
 
 Key Registries:
 
-case_registry
-
-phenomenon_registry
-
-experiment_registry
-
-outcome_registry
-
-season_registry
-
----
-
-# Case Registry Highlights
-
-CASE-001 Ambliopia
-
-CASE-002 Strabismus
-
-CASE-003 NISH without tutors
-
-CASE-004 Arystan Lyceum
-
-CASE-005 Barys rejection → Top-10 Kazakhstan
-
-CASE-006 Tutor independence
-
-CASE-007 NISH + Olympiad Team
-
-CASE-008 Driver license without driving school
-
-CASE-009 Independent university learning
-
-CASE-010 Women's World Championship Team
+* case_registry
+* phenomenon_registry
+* experiment_registry
+* outcome_registry
+* season_registry
+* signal_registry
+* signal_dictionary
 
 ---
 
@@ -223,20 +251,6 @@ Child independently masters complex knowledge and skills
 4. Potential → Results
 
 5. Brain Learning Mechanisms
-
----
-
-# Content Series
-
-S-001 Not Supposed To Work
-
-S-002 How Self Learning Emerges
-
-S-003 Why Some Children Have Time For Everything
-
-S-004 BrainCoach Stories
-
-S-005 Doesn't Start Without Me
 
 ---
 
@@ -316,7 +330,7 @@ Content Factory
 
 Status:
 
-Formalized
+Operational
 
 Modules:
 
@@ -336,7 +350,7 @@ Automation Architecture
 
 Status:
 
-Formalized
+Operational
 
 Documents:
 
@@ -358,55 +372,25 @@ Documents:
 
 ---
 
-# Core Domains
-
-Governance
-
-Purpose:
-
-Protect consistency.
-
----
-
-Research
-
-Purpose:
-
-Transform reality into knowledge.
-
----
-
-Business
-
-Purpose:
-
-Manage human interaction and outcomes.
-
----
-
-Operations
-
-Purpose:
-
-Transform knowledge into assets.
-
----
-
 # Storage Architecture
 
 GitHub
 
 ↓
 
-Knowledge
+Knowledge Source
 
 PostgreSQL
 
 ↓
 
+Knowledge Registry
+
+↓
+
 Research
 
-Business
+↓
 
 Operations
 
@@ -430,39 +414,46 @@ Reasoning
 
 ---
 
-# Major Architectural Discovery
+# Evolution Status
 
-BrainCoach is no longer evolving as a content system.
+Stage 1
 
-BrainCoach is evolving as a signal detection, research and knowledge production system.
+Knowledge Registry Foundation
 
-Content is a downstream asset.
+Completed
 
-Research is upstream.
+↓
 
-Reality remains the primary source.
+Stage 2
+
+Full Repository Registry
+
+Completed
+
+↓
+
+Stage 3
+
+Knowledge Relationships & Knowledge Graph
+
+Planned
 
 ---
 
 # Current Production Bottleneck
 
-Knowledge Architecture
+Resolved:
 
-Resolved
-
-Research Architecture
-
-Resolved
-
-Automation Architecture
-
-Resolved
+* Knowledge Architecture
+* Research Architecture
+* Automation Architecture
+* Repository Registry
 
 Current Constraints:
 
 * Offer Discovery
 * Research Loop MVP
-* Content Factory MVP
+* Content Factory Optimization
 * Content → Consultation Pipeline
 * Consultation → Revenue Pipeline
 
@@ -501,19 +492,6 @@ Signal
 Objective:
 
 Validate that BrainCoach can continuously transform reality into knowledge and knowledge into measurable outcomes.
-
-
-# Current Constraint
-
-Knowledge architecture is no longer the bottleneck.
-
-Current bottleneck:
-
-Offer Discovery
-
-Content → Consultation Pipeline
-
-Consultation → Revenue Pipeline
 
 ---
 

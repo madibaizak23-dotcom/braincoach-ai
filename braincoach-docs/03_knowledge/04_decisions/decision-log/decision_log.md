@@ -1,4 +1,25 @@
    
+## DEC-008 Workflow Naming Convention v1
+
+Date: 2026-06-08
+
+Decision
+
+CMD_ → команды
+TRK_ → трекер
+REC_ → recent
+LST_ → last
+CNT_ → count
+FND_ → find
+INT_ → interview
+VOI_ → voice
+SEM_ → semantic search
+TRAJ_ → trajectory engine
+
+Status
+
+Accepted
+
 ## DEC-005
 
 Date: 2026-06-05

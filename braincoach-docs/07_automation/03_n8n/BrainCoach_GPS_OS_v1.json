@@ -1,0 +1,1439 @@
+{
+  "name": "BrainCoach GPS OS",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2848,
+        -432
+      ],
+      "id": "79c24d43-8dfa-4335-aefb-d2fe8d38afdd",
+      "webhookId": "7420202f-b1a4-40af-9b0e-9cb452aee99a",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text || \"\";\n\nif (!text) {\n  throw new Error(\"No text available\");\n}\n\nif (text.startsWith(\"/\")) {\n  return [{\n    json: {\n      route: \"command\",\n      text\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    route: \"tracker\",\n    text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1904,
+        -384
+      ],
+      "id": "fdadb804-3990-47ab-9931-9718fb88ee09",
+      "name": "CMD_Router"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8bb800f-dfc8-4606-903b-87e6d0bfd80a",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "tracker",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1728,
+        -272
+      ],
+      "id": "ac3e0f67-66cc-4019-a4a1-f5a3479305bc",
+      "name": "CMD_IsTracker"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n  telegram_user_id,\n  role,\n  content,\n  created_at\n)\nVALUES (\n  '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n  'user',\n  '{{ ($json.text || \"\").replace(/'/g,\"''\") }}',\n  NOW()\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1392,
+        -480
+      ],
+      "id": "d00b5b58-0f7c-4d64-a2ec-c5a6f93e6eac",
+      "name": "TRK_SaveRawMessage",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('CMD_IsTracker').first().json.text }}",
+        "options": {
+          "systemMessage": "You are a helpful assistantТы Tracker Extractor.\n\nТвоя задача классифицировать запись пользователя.\n\nВерни JSON строго в формате:\n\n{\n\"entry_type\": \"note\",\n\"tags\": [],\n\"summary\": \"\"\n}\n\nРазрешенные entry_type:\n\nnote\nidea\ninsight\ndecision\nobservation\nhypothesis\ntask\n\nПравила:\n\n* tags максимум 5\n* tags только lowercase\n* summary максимум 20 слов\n* используй только текст пользователя\n* не придумывай факты\n\nВозвращай только JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1136,
+        -480
+      ],
+      "id": "8364837c-a75f-48ff-85ed-65ebd8b75f98",
+      "name": "TRK_ExtractEntry",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output;\n\nreturn [\n  {\n    json: JSON.parse(raw)\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        -480
+      ],
+      "id": "65360d54-913a-48ae-b19a-9ee20d0fbe9f",
+      "name": "TRK_ParseJSON"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=={{\n`✅ Запись сохранена\n\n📌 Наблюдение\n\n🧠 Запись №${$('TRK_GetEntryCount').first().json.total} в вашем треке`\n}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        -480
+      ],
+      "id": "7f0b1444-22b1-483a-8679-08afde75e3d6",
+      "name": "TRK_ReplySaved",
+      "webhookId": "40a58b8b-157d-4af0-a8d1-c344496c9300",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8eb3ff0e-3c3c-4351-bc9c-2f50045b17ff",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/recent",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1584,
+        -80
+      ],
+      "id": "bd791861-2142-41de-a724-ffb92c01e039",
+      "name": "CMD_IsRecent"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    id,\n    entry_type,\n    content\nFROM tracker_entries\nWHERE telegram_user_id =\n{{ $('Telegram Trigger').item.json.message.from.id }}\nAND content NOT LIKE '/%'\nORDER BY created_at DESC\nLIMIT 5;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1312,
+        -96
+      ],
+      "id": "c37296fc-34a8-43da-8843-e621d6507cdd",
+      "name": "REC_LoadEntries",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const entries = $input.all();\n\nconst lines = entries.map(entry => {\n  const icon =\n    entry.json.entry_type === 'observation' ? '📌' :\n    entry.json.entry_type === 'insight' ? '💡' :\n    '📝';\n\n  return `${icon} ${entry.json.content}`;\n});\n\nreturn [{\n  json: {\n    reply:\n      \"📚 Последние записи\\n\\n\" +\n      lines.join(\"\\n\\n\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        -96
+      ],
+      "id": "43605b6e-cd46-489d-a42c-922a3acf38af",
+      "name": "REC_FormatReply"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        -96
+      ],
+      "id": "e3711887-e307-452a-824b-423399776920",
+      "name": "REC_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tracker_entries (\n    telegram_user_id,\n    content,\n    entry_type\n)\nVALUES (\n    {{$node[\"Telegram Trigger\"].json.message.from.id}},\n    '{{$node[\"Telegram Trigger\"].json.message.text}}',\n    '{{$json.entry_type}}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -576,
+        -480
+      ],
+      "id": "07e96ac4-cd98-4014-85a0-8046e1a5ffa0",
+      "name": "TRK_SaveEntry",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total\nFROM tracker_entries\nWHERE telegram_user_id =\n{{$node[\"Telegram Trigger\"].json.message.from.id}};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -368,
+        -480
+      ],
+      "id": "85433a36-70cf-4a8e-8e88-3f0dc76bea0c",
+      "name": "TRK_GetEntryCount",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH upserted_client AS (\n  INSERT INTO clients (\n    telegram_user_id,\n    first_name,\n    username,\n    current_stage,\n    last_message_at,\n    updated_at\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    '{{ ($node[\"Telegram Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n    '{{ ($node[\"Telegram Trigger\"].json.message.from.username || \"\").replace(/'/g, \"''\") }}',\n    'new_lead',\n    NOW(),\n    NOW()\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET\n    username = EXCLUDED.username,\n    last_message_at = NOW(),\n    updated_at = NOW()\n  RETURNING *\n), \nensured_state AS (\n  INSERT INTO conversation_state (\n    telegram_user_id,\n    sub_stage,\n    pattern_type,\n    qualification_signals\n  )\n  VALUES (\n    '{{ $node[\"Telegram Trigger\"].json.message.from.id }}',\n    'q_surface',\n    NULL,\n    '{}'::jsonb\n  )\n  ON CONFLICT (telegram_user_id)\n  DO UPDATE SET updated_at = NOW()\n  RETURNING *\n)\nSELECT\n  uc.current_stage,\n  uc.allow_reminders,\n  es.sub_stage,\n  es.pattern_type,\n  es.qualification_signals\nFROM upserted_client uc\nJOIN ensured_state es ON es.telegram_user_id = uc.telegram_user_id;",
+        "additionalFields": {}
+      },
+      "name": "SYS_LoadClient",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        -400
+      ],
+      "id": "14806ef7-1129-4905-a161-b713c5a5a515",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dcd87f6c-48b1-40c4-9bd1-f63ce0f0d3ad",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/last",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1520,
+        144
+      ],
+      "id": "2b8d83f5-7e74-4c55-877c-9be3a7c75b5a",
+      "name": "CMD_IsLast"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    id,\n    entry_type,\n    content,\n    created_at\nFROM tracker_entries\nWHERE telegram_user_id =\n{{ $('Telegram Trigger').item.json.message.from.id }}\nAND content NOT LIKE '/%'\nORDER BY created_at DESC\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1136,
+        128
+      ],
+      "id": "21885342-1455-4bb4-bc28-143bb432bc5f",
+      "name": "LST_LoadLastEntry",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const entry = $input.first().json;\n\nconst icon =\n  entry.entry_type === 'observation' ? '📌' :\n  entry.entry_type === 'insight' ? '💡' :\n  '📝';\n\nreturn [{\n  json: {\n    reply:\n`${icon} Последняя запись\n\n${entry.content}\n\n🏷 Тип: ${entry.entry_type}\n🕒 ${entry.created_at}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        128
+      ],
+      "id": "e00680ed-faf1-428b-b676-43bd99a36c8c",
+      "name": "LST_FormatReply"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        128
+      ],
+      "id": "97c164e6-51c6-45aa-89b9-b30d07a142c9",
+      "name": "LST_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total\nFROM tracker_entries\nWHERE telegram_user_id =\n{{ $('Telegram Trigger').item.json.message.from.id }}\nAND content NOT LIKE '/%';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1024,
+        272
+      ],
+      "id": "9dea8d73-1e29-4a28-9b5e-3a4a5a85adf7",
+      "name": "CNT_LoadCount",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5b5b5dba-225e-45c2-83aa-12b60ab78817",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/count",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1344,
+        288
+      ],
+      "id": "3c648919-6e92-4648-89e5-b0865e09988e",
+      "name": "CMD_IsCount"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -608,
+        272
+      ],
+      "id": "768c0906-bac3-417e-b6f0-db77a8619445",
+      "name": "CNT_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    reply: `📊 Всего записей в треке: ${$json.total}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        272
+      ],
+      "id": "26cf6ab8-7971-4695-add0-160f23e25468",
+      "name": "CNT_FormatReply"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5b5b5dba-225e-45c2-83aa-12b60ab78817",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/find",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1200,
+        448
+      ],
+      "id": "0b86e04e-fbc9-4c92-87ac-20f6110c27ff",
+      "name": "CMD_IsFind"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT entry_type, content, created_at\nFROM tracker_entries\nWHERE telegram_user_id =\n{{ $('Telegram Trigger').item.json.message.from.id }}\n\nAND LOWER(content) LIKE LOWER(\n'%{{ $('Telegram Trigger').item.json.message.text\n      .replace('/find','')\n      .trim() }}%'\n)\n\nORDER BY created_at DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -816,
+        432
+      ],
+      "id": "02d5eee7-78df-44c0-b27f-852bdf08180d",
+      "name": "FND_LoadEntries",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5b5b5dba-225e-45c2-83aa-12b60ab78817",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/decision",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1072,
+        656
+      ],
+      "id": "7b9ef1ae-9597-4e4a-8d16-43f8cb5e62e3",
+      "name": "CMD_IsDecision"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO system_decisions (\n    telegram_user_id,\n    title,\n    decision_text\n)\nVALUES (\n    {{ $('Telegram Trigger').item.json.message.from.id }},\n    'manual_decision',\n    '{{ $('Telegram Trigger').item.json.message.text\n        .replace(\"/decision\",\"\")\n        .trim()\n        .replace(/'/g,\"''\") }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -848,
+        640
+      ],
+      "id": "907201c0-4031-4c61-8ba0-ed421278d109",
+      "name": "DEC_SaveDecision",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ '✅ Decision сохранён' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        640
+      ],
+      "id": "e29948e6-2279-4cfd-82c1-d5c90e828273",
+      "name": "DEC_ReplySaved",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const decisions = $input.all();\n\nif (decisions.length === 0) {\n  return [{\n    json: {\n      reply: '📚 Решений пока нет'\n    }\n  }];\n}\n\nconst lines = decisions.map((d, i) =>\n`${i + 1}. ${d.json.decision_text}`\n);\n\nreturn [{\n  json: {\n    reply:\n`📚 Последние решения\n\n${lines.join('\\n\\n')}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        816
+      ],
+      "id": "fd980082-4e55-43db-aa95-61004d4a35e7",
+      "name": "DEC_FormatReply"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        816
+      ],
+      "id": "f26e101d-e7f1-4c77-a005-96ceabcc9627",
+      "name": "DEC_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb64ed2c-489b-4891-8162-6a912cf99ce9",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/interview",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -736,
+        1008
+      ],
+      "id": "1b95632f-39f2-4ea3-8669-d3f7df3d8a1e",
+      "name": "CMD_IsInterview"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    topic: $json.text\n      .replace('/interview', '')\n      .trim()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        992
+      ],
+      "id": "51530801-dd3d-44f2-a7e6-2da467140294",
+      "name": "INT_ExtractTopic"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        1008
+      ],
+      "id": "5956cf12-c232-42c2-aab5-81f448d92c56",
+      "name": "INT_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1200,
+        -304
+      ],
+      "id": "982e762c-2286-42b7-bb54-af7c5cacca27",
+      "name": "LLM_TRK_Extractor",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L528MhaSTMRnx6A8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        1168
+      ],
+      "id": "98baafb3-435a-421e-bb92-2981c61d9d24",
+      "name": "LLM_INT_QuestionEngine",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L528MhaSTMRnx6A8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Тема:\n{{ $json.topic }}\nЗадай следующий исследовательский вопрос.",
+        "options": {
+          "systemMessage": "You are a helpful assistantТы Interview Engine BrainCoach.\n\nТвоя задача задавать ОДИН следующий вопрос.\n\nНе объясняй.\nНе анализируй.\nНе пиши вступление.\n\nТолько один сильный вопрос,\nкоторый помогает человеку глубже исследовать тему."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -256,
+        1008
+      ],
+      "id": "3db27654-51da-46b5-8444-9aafd8f822ef",
+      "name": "INT_GenerateQuestion",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    decision_text,\n    created_at\nFROM system_decisions\nWHERE telegram_user_id =\n{{ $('Telegram Trigger').item.json.message.from.id }}\nORDER BY created_at DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -576,
+        816
+      ],
+      "id": "5bff0f98-0d6f-43e1-99e2-b04dfe793127",
+      "name": "DEC_LoadDecisions",
+      "credentials": {
+        "postgres": {
+          "id": "9YWbwI6RrEQvjapH",
+          "name": "Postgres account N8N-V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e213a75f-bb27-4269-980c-271c6e00d35e",
+              "leftValue": "={{ $json.message.voice?.file_id || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2624,
+        -416
+      ],
+      "id": "c9cc0ff9-e8ec-46b4-a103-4e30dd43f194",
+      "name": "CMD_IsVoice"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2800,
+        -192
+      ],
+      "id": "8395ca3e-c8f7-473c-97d5-9e3dc138590f",
+      "name": "VOI_GetFile",
+      "webhookId": "59cf3a22-0bd3-4336-8fd7-1d913e84a254",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -2608,
+        -192
+      ],
+      "id": "d3fd8bad-75e5-4cfb-8e94-6da5ec88f420",
+      "name": "LLM_VOI_Transcriber",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L528MhaSTMRnx6A8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    text: $json.content.parts[0].text,\n    route: 'voice'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2416,
+        -256
+      ],
+      "id": "750b71f3-270a-41e1-ae8c-496bc85373f2",
+      "name": "VOI_NormalizeMessage"
+    },
+    {
+      "parameters": {
+        "content": "Telegram Trigger\n\nCMD_IsVoice\n\nVOICE PATH\n─────────────\nVOI_GetFile\nLLM_VOI_Transcriber\nVOI_NormalizeMessage\n\nUNIFIED ENTRY\n─────────────\nSYS_LoadClient\n\nCMD_Router",
+        "height": 304,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3008,
+        0
+      ],
+      "id": "afb8431f-f19a-4807-88c9-9bff9596e356",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "BrainCoach GPS OS v1\nINTAKE\nTelegram Trigger\nCMD_IsVoice\n\nVOICE\nVOI_GetFile\nLLM_VOI_Transcriber\nVOI_NormalizeMessage\n\nCORE\nSYS_LoadClient\nCMD_Router\n\nMODULES\nTRK\nREC\nLST\nCNT\nFND\nDEC\nINT\n\nFuture:\nSEM\nTRAJ",
+        "height": 576,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2512,
+        336
+      ],
+      "id": "9df5cbed-222e-4957-ac1d-2bec91cac12f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let voiceText = \"\";\n\ntry {\n  voiceText = $('VOI_NormalizeMessage').first().json.text;\n} catch (e) {\n  voiceText = \"\";\n}\n\nconst telegramText =\n  $('Telegram Trigger').first()?.json?.message?.text || \"\";\n\nreturn [{\n  json: {\n    text: voiceText || telegramText,\n    current_stage: $json.current_stage,\n    sub_stage: $json.sub_stage,\n    pattern_type: $json.pattern_type,\n    allow_reminders: $json.allow_reminders\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2080,
+        -384
+      ],
+      "id": "bb0a1cc2-9476-4420-abc3-f770300933e4",
+      "name": "SYS_NormalizeInput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb64ed2c-489b-4891-8162-6a912cf99ce9",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/history",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -912,
+        832
+      ],
+      "id": "d3c2bf62-d4c0-4b76-b29f-bec44f3171f1",
+      "name": "CMD_IsHistory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "CMD_IsVoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_Router": {
+      "main": [
+        [
+          {
+            "node": "CMD_IsTracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsTracker": {
+      "main": [
+        [
+          {
+            "node": "TRK_SaveRawMessage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsRecent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_SaveRawMessage": {
+      "main": [
+        [
+          {
+            "node": "TRK_ExtractEntry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_ExtractEntry": {
+      "main": [
+        [
+          {
+            "node": "TRK_ParseJSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_ParseJSON": {
+      "main": [
+        [
+          {
+            "node": "TRK_SaveEntry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsRecent": {
+      "main": [
+        [
+          {
+            "node": "REC_LoadEntries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsLast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REC_LoadEntries": {
+      "main": [
+        [
+          {
+            "node": "REC_FormatReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REC_FormatReply": {
+      "main": [
+        [
+          {
+            "node": "REC_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_SaveEntry": {
+      "main": [
+        [
+          {
+            "node": "TRK_GetEntryCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_GetEntryCount": {
+      "main": [
+        [
+          {
+            "node": "TRK_ReplySaved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_LoadClient": {
+      "main": [
+        [
+          {
+            "node": "SYS_NormalizeInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsLast": {
+      "main": [
+        [
+          {
+            "node": "LST_LoadLastEntry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LST_LoadLastEntry": {
+      "main": [
+        [
+          {
+            "node": "LST_FormatReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LST_FormatReply": {
+      "main": [
+        [
+          {
+            "node": "LST_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CNT_LoadCount": {
+      "main": [
+        [
+          {
+            "node": "CNT_FormatReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsCount": {
+      "main": [
+        [
+          {
+            "node": "CNT_LoadCount",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsFind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CNT_FormatReply": {
+      "main": [
+        [
+          {
+            "node": "CNT_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsFind": {
+      "main": [
+        [
+          {
+            "node": "FND_LoadEntries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsDecision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsDecision": {
+      "main": [
+        [
+          {
+            "node": "DEC_SaveDecision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsHistory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DEC_SaveDecision": {
+      "main": [
+        [
+          {
+            "node": "DEC_ReplySaved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DEC_FormatReply": {
+      "main": [
+        [
+          {
+            "node": "DEC_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FND_LoadEntries": {
+      "main": [
+        []
+      ]
+    },
+    "CMD_IsInterview": {
+      "main": [
+        [
+          {
+            "node": "INT_ExtractTopic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INT_ExtractTopic": {
+      "main": [
+        [
+          {
+            "node": "INT_GenerateQuestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_TRK_Extractor": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "TRK_ExtractEntry",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_INT_QuestionEngine": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "INT_GenerateQuestion",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INT_GenerateQuestion": {
+      "main": [
+        [
+          {
+            "node": "INT_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DEC_LoadDecisions": {
+      "main": [
+        [
+          {
+            "node": "DEC_FormatReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsVoice": {
+      "main": [
+        [
+          {
+            "node": "VOI_GetFile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SYS_LoadClient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_GetFile": {
+      "main": [
+        [
+          {
+            "node": "LLM_VOI_Transcriber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_VOI_Transcriber": {
+      "main": [
+        [
+          {
+            "node": "VOI_NormalizeMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_NormalizeMessage": {
+      "main": [
+        [
+          {
+            "node": "SYS_LoadClient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_NormalizeInput": {
+      "main": [
+        [
+          {
+            "node": "CMD_Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CMD_IsHistory": {
+      "main": [
+        [
+          {
+            "node": "DEC_LoadDecisions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CMD_IsInterview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2486012d-130f-4872-ae68-cdb62c2c88b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48d6698760d67e9b0cb2984cfccb6ee712afdcc3e47735c395f68c6ceaddea3c"
+  },
+  "id": "BvBk4eCQv5IC6Xuq",
+  "tags": []
+}
