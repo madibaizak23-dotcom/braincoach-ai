@@ -1,9 +1,9 @@
 # tracker_capture_v1
 
-Status: Working MVP
+Status: Production MVP
 Layer: Automation / Tracker Intake
-Implementation: n8n
-Last Updated: 2026-06-08
+Implementation: n8n (BrainCoach GPS OS V3)
+Last Updated: 2026-06-09
 
 ## Purpose
 
@@ -15,11 +15,13 @@ Current scope:
 Raw Input
 ->
 Observation
+->
+Signal Candidate
 ```
 
 This workflow is not a journaling system.
 
-Tracker is the intake layer of BrainCoach GPS and the future signal detection engine.
+Tracker is the intake layer of BrainCoach GPS and the signal detection engine.
 
 ## Strategic Role
 
@@ -47,12 +49,14 @@ Model
 Decision
 ```
 
-Current implementation covers only:
+Current implementation covers:
 
 ```text
 Raw Input
 ->
 Observation
+->
+Signal Candidate
 ```
 
 ## Current Workflow Flow
@@ -86,6 +90,14 @@ TRK_SaveEntry
 ->
 OBS_CreateObservation
 ->
+SIG_ExtractSignalCandidate
+->
+SIG_ParseCandidate
+->
+SIG_HasCandidate
+->
+DB_SaveSignalCandidate (if signal exists)
+->
 TRK_GetEntryCount
 ->
 TRK_ReplySaved
@@ -113,22 +125,23 @@ Validated:
 
 - voice capture from Telegram
 - text capture from Telegram
-- voice transcription through Gemini
+- voice transcription
 - basic input routing
 - tracker entry classification
 - persistence into `messages`
 - persistence into `tracker_entries`
 - observation creation in `observations`
+- signal candidate extraction via `SIG_*` nodes
+- signal candidate persistence in `research_signal_candidates`
 - `/recent` command for recent tracker entries
 
-Not optimized yet:
+Not yet implemented:
 
-- signal extraction
 - deviation detection
 - phenomenon creation
 - deduplication across observations
-- structured metadata persistence from extractor output
-- confidence scoring
+- structured metadata persistence from extractor output (tags, summary)
+- signal candidate promotion workflow
 - object lifecycle states beyond `captured`
 
 ## Current Tables
@@ -140,6 +153,7 @@ Not optimized yet:
 | `messages` | raw user message persistence |
 | `tracker_entries` | captured tracker notes and classified entry type |
 | `observations` | first structured BrainCoach object created from tracker input |
+| `research_signal_candidates` | staging table for signal candidates extracted from observations |
 
 ## Current Nodes
 
@@ -324,6 +338,42 @@ Current inserted fields:
 - `source_entry_id`
 - `current_state = captured`
 
+### `SIG_ExtractSignalCandidate`
+
+Type: LangChain Agent (Version 3.1)
+
+Purpose: Analyzes the observation text to detect if it contains a development signal candidate.
+
+Expected output JSON:
+```json
+{
+  "has_signal": true,
+  "signal_text": "",
+  "signal_type": "",
+  "confidence": 0.0,
+  "evidence": "",
+  "reason": ""
+}
+```
+
+### `SIG_ParseCandidate`
+
+Type: Code (Version 2)
+
+Purpose: Parses the string output from the LangChain Agent into a structured JSON object.
+
+### `SIG_HasCandidate`
+
+Type: IF (Version 2.3)
+
+Purpose: Checks if `has_signal` is true in the parsed object. If yes, routes to DB persistence; if no, bypasses and routes directly to the total entry count.
+
+### `DB_SaveSignalCandidate`
+
+Type: Postgres (Version 2.6)
+
+Purpose: Saves the candidate signal to the `research_signal_candidates` staging table.
+
 ### `TRK_GetEntryCount`
 
 Type: Postgres
@@ -381,70 +431,46 @@ Every proposed upgrade must include:
 4. Documentation updates required
 5. Knowledge OS placement
 
-## Recommended Next Increment
+## Stage 3 Completion
 
-Next upgrade should add signal candidate extraction without changing current observation creation.
+Stage 3 completed 2026-06-09.
 
-Recommended object evolution:
+Signal candidate extraction is operational in BrainCoach GPS OS V3.
 
-```text
-tracker_entries
-->
-observations
-->
-signal_candidates
-```
+Production export: `BrainCoach GPS OS — Stage 3 Complete.json`
 
-Recommended new table:
+First validated signal categories: `self_initiation`, `dependence_external`
+
+Known limitation: research notes and parent reflections can be misclassified as behavioral signals. Tracked for Signal Taxonomy v2.
+
+## Recommended Next Increment (Stage 4)
+
+Next upgrade should add analytics and intelligence over accumulated signal candidates.
+
+Recommended evolution:
 
 ```text
 research_signal_candidates
+->
+analytics views
+->
+signal aggregation
+->
+pattern detection
+->
+weekly reports
 ```
 
-Status:
+Deferred:
 
-```text
-Database table created.
-n8n insertion nodes not yet added.
-```
+- signal candidate promotion (candidate → accepted → promoted)
+- deviation detection
+- phenomenon creation
+- deduplication across observations
 
 Reason:
 
-The system should not immediately promote every observation into a confirmed signal. A candidate layer allows review, confidence scoring, deduplication, and later promotion.
-
-Recommended new nodes:
-
-```text
-OBS_CreateObservation
-->
-SIG_ExtractSignalCandidate
-->
-SIG_ParseCandidate
-->
-DB_SaveSignalCandidate
-->
-TRK_GetEntryCount
-```
-
-Recommended initial fields:
-
-- `id`
-- `telegram_user_id`
-- `source_observation_id`
-- `signal_text`
-- `signal_type`
-- `confidence`
-- `evidence`
-- `status`
-- `metadata`
-- `created_at`
-- `updated_at`
-
-Knowledge OS placement:
-
-- `observations` belong to Research OS intake.
-- `research_signal_candidates` belong to the Research Layer.
-- confirmed signals should later connect to `signal_registry` and `signal_dictionary`.
+The system now accumulates signal data. Stage 4 makes this data useful through aggregation, pattern detection, and reporting before promoting candidates to confirmed signals.
 
 ## Documentation Dependencies
 

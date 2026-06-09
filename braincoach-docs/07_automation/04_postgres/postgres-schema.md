@@ -1,7 +1,7 @@
 # PostgreSQL Schema
 
 Status: Active DBA Snapshot
-Last Updated: 2026-06-08
+Last Updated: 2026-06-09
 Database: `braincoach_dev`
 Schema: `public`
 
@@ -198,7 +198,9 @@ Current role: primary source of truth for known repository assets.
 | `last_updated` | `timestamp without time zone` | yes | `now()` |
 | `metadata` | `jsonb` | yes | `'{}'::jsonb` |
 
-Stage 3 note: this table should feed relationship discovery and graph construction.
+Stage 3 status: this table is the authoritative registry for repository Knowledge Objects.
+
+Stage 4 note: this table should feed relationship discovery and graph construction when the knowledge graph layer is built.
 
 ### `knowledge_events`
 
@@ -298,7 +300,9 @@ Purpose: Research and tracker observations created from tracker entries.
 | `created_at` | `timestamp without time zone` | yes | `now()` |
 | `updated_at` | `timestamp without time zone` | yes | `now()` |
 
-Stage 3 note: observations are a natural source for signal, phenomenon, and trajectory graph edges.
+Stage 3 status: this table feeds the operational research intake pipeline. Observations are created from tracker entries and serve as the source for signal candidate extraction.
+
+Stage 4 note: observations will feed analytics views and pattern detection.
 
 ### `offers_and_outcomes`
 
@@ -352,7 +356,11 @@ Purpose: Staging table for potential signals extracted from tracker observations
 
 Knowledge OS placement: Research Layer / Tracker Intake.
 
+Stage 3 status: operational. Receives live signal candidates from BrainCoach GPS OS V3 via `DB_SaveSignalCandidate`.
+
 This table receives signal candidates after `OBS_CreateObservation` and before any promotion into confirmed signals, deviations, or phenomena.
+
+First validated signal categories in production: `self_initiation`, `dependence_external`.
 
 ### `system_decisions`
 
@@ -666,17 +674,60 @@ The index snapshot also includes n8n internal tables in the same `public` schema
 | `idx_profile_learning_style` | btree on `learning_style` |
 | `idx_profile_updated` | btree on `last_profile_update DESC` |
 
-## Stage 3 Readiness Notes
+## Stage 3 Completion Notes
 
-Stage 2 is complete: `knowledge_assets` is the authoritative registry for repository Knowledge Objects.
+Stage 3 completed 2026-06-09.
 
-Stage 3 should add relationship discovery without disrupting current tables. The likely next database objects are:
+Operational tables in the research intake pipeline:
 
-- `knowledge_relationship_candidates`
+```text
+tracker_entries
+->
+observations
+->
+research_signal_candidates
+```
+
+All three tables are receiving live data from BrainCoach GPS OS V3 in production.
+
+Validated capabilities:
+
+- signal classification
+- confidence scoring
+- evidence extraction
+- metadata jsonb storage
+- relational links (entry → observation → candidate)
+
+Known limitation: research notes and parent reflections can be misclassified as behavioral signals. Tracked for Signal Taxonomy v2.
+
+## Stage 4 Readiness Notes
+
+Stage 4 should add analytics and intelligence capabilities without disrupting current intake tables.
+
+Likely next database objects:
+
+- `v_signal_candidates_summary` (view)
+- `v_observations_by_period` (view)
+- optional `analytics_snapshots` table for periodic captures
+- `knowledge_relationship_candidates` (when knowledge graph work begins)
 - `knowledge_relationships`
-- optional semantic index or embedding table after relationship rules are stable
+- optional `research_signals` table for promoted signals
 
-Recommended Stage 3 dependency chain:
+Recommended Stage 4 dependency chain:
+
+```text
+research_signal_candidates
+->
+analytics views
+->
+signal aggregation
+->
+pattern detection
+->
+weekly reports
+```
+
+Knowledge graph chain (secondary priority in Stage 4):
 
 ```text
 knowledge_assets

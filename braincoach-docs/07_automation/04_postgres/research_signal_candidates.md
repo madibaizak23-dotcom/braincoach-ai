@@ -1,11 +1,12 @@
 # research_signal_candidates
 
-Status: Active
+Status: Active — Operational
 Owner: BrainCoach
 Database: `braincoach_dev`
 Schema: `public`
 Migration: `migrations/004_create_research_signal_candidates.sql`
 Created: 2026-06-08
+Last Updated: 2026-06-09
 
 ## Purpose
 
@@ -22,6 +23,8 @@ observations
 ->
 research_signal_candidates
 ```
+
+Stage 3 status: operational. Table receives live data from BrainCoach GPS OS V3 via `DB_SaveSignalCandidate`.
 
 ## Knowledge OS Placement
 
@@ -80,7 +83,7 @@ This table belongs to BrainCoach-owned application data, not n8n runtime infrast
 
 ## n8n Usage
 
-Planned insertion point:
+Production insertion path (BrainCoach GPS OS V3):
 
 ```text
 OBS_CreateObservation
@@ -89,16 +92,18 @@ SIG_ExtractSignalCandidate
 ->
 SIG_ParseCandidate
 ->
-DB_SaveSignalCandidate
+SIG_HasCandidate
+->
+DB_SaveSignalCandidate (if has_signal)
 ->
 TRK_GetEntryCount
 ```
 
-The existing `tracker_entries` and `observations` writes remain unchanged.
+Status: operational in production.
 
 ## Initial Extractor Output
 
-Recommended JSON shape:
+JSON shape:
 
 ```json
 {
@@ -111,7 +116,21 @@ Recommended JSON shape:
 }
 ```
 
-If `has_signal = false`, the workflow can skip `DB_SaveSignalCandidate`.
+If `has_signal = false`, the workflow skips `DB_SaveSignalCandidate`.
+
+## First Validated Signal Categories
+
+Production data has validated:
+
+- `self_initiation`
+- `dependence_external`
+
+## Known Limitations
+
+- Research notes and parent reflections can be misclassified as behavioral signals
+- No deduplication across candidates
+- No automated promotion workflow (candidate → accepted → promoted)
+- Classification taxonomy immature — Signal Taxonomy v2 planned
 
 ## BrainCoach Role
 
@@ -132,3 +151,13 @@ Deviation
 ->
 Phenomenon
 ```
+
+Current implementation covers through Signal Candidate.
+
+## Stage 4 Tasks
+
+- Signal aggregation across candidates
+- Pattern detection from accumulated signal types
+- Analytics views over this table
+- Promotion workflow (candidate → confirmed signal)
+- Signal Taxonomy v2 to reduce classification noise

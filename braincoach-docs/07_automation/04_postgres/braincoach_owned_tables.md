@@ -1,7 +1,7 @@
 # BrainCoach Owned Tables
 
 Status: Active DBA Rule
-Last Updated: 2026-06-08
+Last Updated: 2026-06-09
 Database: `braincoach_dev`
 Schema: `public`
 
@@ -288,4 +288,4 @@ public.*      -> n8n platform/runtime tables
 braincoach.*  -> BrainCoach application tables
 ```
 
-Do not perform this migration during active Stage 3 discovery unless there is a clear operational reason. Stability is more important than schema expansion.
+Do not perform this migration during active Stage 4 work unless there is a clear operational reason. Stability is more important than schema expansion.

@@ -1,4 +1,4 @@
-# BrainCoach GPS OS v1
+# BrainCoach GPS OS
 
 ## Назначение
 
@@ -7,12 +7,31 @@ BrainCoach GPS OS — персональная Knowledge OS для фиксац�
 Система объединяет:
 
 * Tracker
+* Observation Layer
+* Signal Extraction Layer
 * Memory Retrieval
 * Decisions
 * Interview Engine
 * Voice Input
 
 в единый интерфейс через Telegram.
+
+---
+
+## Версия
+
+Version: V3
+
+State: Production
+
+Export: `BrainCoach GPS OS — Stage 3 Complete.json`
+
+Previous versions:
+
+* v1 — базовый Tracker без Observation и Signal layers
+* v2 — промежуточные итерации signal extraction
+
+V3 — текущая рабочая production-версия.
 
 ---
 
@@ -24,9 +43,9 @@ BrainCoach GPS OS — персональная Knowledge OS для фиксац�
 
 Потоки:
 
-Text → SYS_LoadClient
+Text → SYS_LoadContext → SYS_BuildInputContext → SYS_RouteInput
 
-Voice → VOI_GetFile → LLM_VOI_Transcriber → VOI_NormalizeMessage → SYS_LoadClient
+Voice → VOI_CheckVoice → VOI_GetFile → VOI_Transcribe → VOI_NormalizeTranscript → SYS_LoadContext
 
 После нормализации все сообщения становятся текстом и обрабатываются одинаково.
 
@@ -34,7 +53,7 @@ Voice → VOI_GetFile → LLM_VOI_Transcriber → VOI_NormalizeMessage → SYS_L
 
 ## Core Components
 
-### SYS_LoadClient
+### SYS_LoadContext
 
 Загружает или создает клиента.
 
@@ -42,19 +61,19 @@ Voice → VOI_GetFile → LLM_VOI_Transcriber → VOI_NormalizeMessage → SYS_L
 
 * client profile
 * conversation state
-* current stage
+* current stage (`tracking`)
 * qualification signals
 
 ---
 
-### CMD_Router
+### SYS_RouteInput
 
 Определяет маршрут обработки сообщения.
 
 Возможные маршруты:
 
-* tracker
-* command
+* tracker — обычный ввод для захвата
+* command — slash-команды (`/recent`, `/last`, и т.д.)
 
 ---
 
@@ -68,10 +87,91 @@ Voice → VOI_GetFile → LLM_VOI_Transcriber → VOI_NormalizeMessage → SYS_L
 
 Компоненты:
 
-* TRK_SaveRawMessage
-* LLM_TRK_Extractor
-* TRK_ParseJSON
+* TRK_SaveRawEvent
+* TRK_ExtractEntry
+* TRK_ParseEntry
 * TRK_SaveEntry
+* TRK_GetEntryCount
+* TRK_ReplySaved
+
+Таблицы:
+
+* `messages`
+* `tracker_entries`
+
+---
+
+### OBS — Observation Layer
+
+Назначение:
+
+Создание структурированного research-объекта из tracker entry.
+
+Компоненты:
+
+* OBS_CreateObservation
+
+Таблица:
+
+* `observations`
+
+Статус: Operational
+
+---
+
+### SIG — Signal Extraction Layer
+
+Назначение:
+
+Извлечение signal candidates из observations без немедленного promotion в confirmed signals.
+
+Компоненты:
+
+* SIG_ExtractSignalCandidate (LangChain Agent)
+* SIG_ParseCandidate
+* SIG_HasCandidate
+* DB_SaveSignalCandidate
+
+Таблица:
+
+* `research_signal_candidates`
+
+Статус: Operational
+
+Первые валидированные категории:
+
+* self_initiation
+* dependence_external
+
+Expected JSON output:
+
+```json
+{
+  "has_signal": true,
+  "signal_text": "",
+  "signal_type": "",
+  "confidence": 0.0,
+  "evidence": "",
+  "reason": ""
+}
+```
+
+---
+
+### HIS — History
+
+Команда:
+
+/recent
+
+Компоненты:
+
+* HIS_CheckRecent
+* HIS_LoadEntries
+* HIS_FormatReply
+* HIS_Reply
+
+Показывает последние 5 записей пользователя.
 
 ---
 
@@ -81,7 +181,7 @@ Voice → VOI_GetFile → LLM_VOI_Transcriber → VOI_NormalizeMessage → SYS_L
 
 /recent
 
-Показывает последние записи пользователя.
+(реализовано через HIS-модуль)
 
 ---
 
@@ -138,7 +238,7 @@ system_decisions
 
 /interview <topic>
 
-Использует Gemini Flash для генерации следующего исследовательского вопроса.
+Использует LLM для генерации следующего исследовательского вопроса.
 
 Назначение:
 
@@ -154,11 +254,50 @@ system_decisions
 
 Компоненты:
 
+* VOI_CheckVoice
 * VOI_GetFile
-* LLM_VOI_Transcriber
-* VOI_NormalizeMessage
+* VOI_Transcribe
+* VOI_NormalizeTranscript
 
-Используется Gemini Audio Transcription.
+---
+
+## Production Pipeline
+
+```text
+TG_Trigger
+↓
+VOI_CheckVoice (voice path)
+↓
+SYS_LoadContext
+↓
+SYS_BuildInputContext
+↓
+SYS_RouteInput
+↓
+TRK_IsTrackerEvent
+↓
+TRK_SaveRawEvent
+↓
+TRK_ExtractEntry
+↓
+TRK_ParseEntry
+↓
+TRK_SaveEntry
+↓
+OBS_CreateObservation
+↓
+SIG_ExtractSignalCandidate
+↓
+SIG_ParseCandidate
+↓
+SIG_HasCandidate
+↓
+DB_SaveSignalCandidate (if has_signal)
+↓
+TRK_GetEntryCount
+↓
+TRK_ReplySaved
+```
 
 ---
 
@@ -169,6 +308,12 @@ CMD_ — Command Routing
 SYS_ — System
 
 TRK_ — Tracker
+
+OBS_ — Observation
+
+SIG_ — Signal Extraction
+
+HIS_ — History
 
 REC_ — Recent
 
@@ -184,9 +329,11 @@ INT_ — Interview
 
 VOI_ — Voice
 
-LLM_ — Gemini / Language Models
+LLM_ — Language Models
 
-SEM_ — Semantic Layer (planned)
+DB_ — Database persistence
+
+SEM_ — Semantic Layer (planned — Stage 4+)
 
 TRAJ_ — Trajectory Layer (planned)
 
@@ -194,15 +341,19 @@ TRAJ_ — Trajectory Layer (planned)
 
 ## Current Status
 
-Version: v1
+Version: V3
 
-State: Operational
+State: Production
 
 Implemented:
 
 ✓ Voice Intake
 
 ✓ Tracker
+
+✓ Observation Layer
+
+✓ Signal Extraction Layer
 
 ✓ Recent
 
@@ -216,9 +367,28 @@ Implemented:
 
 ✓ Interview Engine
 
-Planned:
+Known Limitations:
 
-* Semantic Search
-* Trajectory Engine
-* Memory Graph
-* Knowledge Registry Sync
+* Research notes and parent reflections can be misclassified as behavioral signals
+* Extractor metadata (tags, summary) not fully persisted into tracker_entries.metadata
+* No deduplication across observations or signal candidates
+* No promotion path from candidate to confirmed signal
+* Mixed LLM providers (Vertex AI migration planned — Stage 4)
+
+Planned (Stage 4):
+
+* Vertex AI Migration
+* Analytics Layer
+* Signal Aggregation
+* Pattern Detection
+* Weekly Reports
+
+---
+
+## Documentation References
+
+* Workflow spec: `braincoach-docs/07_automation/02_workflows/tracker_capture_v1.md`
+* Production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS OS — Stage 3 Complete.json`
+* Signal candidates table: `braincoach-docs/07_automation/04_postgres/research_signal_candidates.md`
+* Stage 3 report: `braincoach-docs/05_operations/reviews/stage_3_completion_report.md`
+* Stage 4 plan: `braincoach-docs/05_operations/planning/stage_4_planning.md`

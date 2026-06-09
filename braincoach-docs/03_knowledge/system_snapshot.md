@@ -1,8 +1,36 @@
 # BRAINCOACH SYSTEM SNAPSHOT
 
-Date: 2026-06-07
+Date: 2026-06-09
 
 Status: Active Reference
+
+---
+
+# Current Production System
+
+BrainCoach GPS OS V3
+
+Telegram
+→ Tracker Entry
+→ Observation
+→ Signal Candidate
+→ PostgreSQL
+
+Operational Components:
+
+| Component | Status |
+| --- | --- |
+| Telegram Tracker | Operational |
+| PostgreSQL | Connected |
+| n8n (BrainCoach GPS OS V3) | Production |
+| Observation Layer | Operational |
+| Signal Extraction Layer | Operational |
+| research_signal_candidates | Receiving live data |
+
+First Validated Signal Categories:
+
+* self_initiation
+* dependence_external
 
 ---
 
@@ -52,7 +80,7 @@ Status: Active Reference
 
 Stage:
 
-Stage 2 Completed
+Stage 3 Completed
 
 Registry Status:
 
@@ -87,7 +115,7 @@ Repository Coverage:
 
 Result:
 
-knowledge_assets is now the authoritative registry of BrainCoach Knowledge Objects.
+knowledge_assets is the authoritative registry of BrainCoach Knowledge Objects.
 
 ---
 
@@ -196,6 +224,12 @@ Research Assets:
 * Mechanisms
 * Longitudinal Cases
 
+Current Operational Objects:
+
+* tracker_entries
+* observations
+* research_signal_candidates
+
 ---
 
 # Intelligence Layer
@@ -294,7 +328,7 @@ Research OS
 
 Status:
 
-Formalized
+Operational (intake path)
 
 Core Flow:
 
@@ -306,7 +340,7 @@ Observation
 
 ↓
 
-Deviation
+Signal Candidate
 
 ↓
 
@@ -323,6 +357,10 @@ Research
 ↓
 
 Model
+
+Current implementation covers:
+
+Reality → Observation → Signal Candidate
 
 ---
 
@@ -372,6 +410,28 @@ Documents:
 
 ---
 
+BrainCoach GPS OS
+
+Version: V3
+
+Status: Production
+
+Export:
+
+BrainCoach GPS OS — Stage 3 Complete.json
+
+Capabilities:
+
+* Voice Intake
+* Tracker
+* Observation Layer
+* Signal Extraction Layer
+* Recent / Last / Count / Find
+* Decisions
+* Interview Engine
+
+---
+
 # Storage Architecture
 
 GitHub
@@ -388,7 +448,7 @@ Knowledge Registry
 
 ↓
 
-Research
+Research Intake
 
 ↓
 
@@ -398,7 +458,7 @@ pgvector
 
 ↓
 
-Retrieval
+Retrieval (planned)
 
 n8n
 
@@ -410,7 +470,7 @@ Vertex AI
 
 ↓
 
-Reasoning
+Reasoning (migration planned — Stage 4)
 
 ---
 
@@ -434,7 +494,15 @@ Completed
 
 Stage 3
 
-Knowledge Relationships & Knowledge Graph
+Observation & Signal Extraction Pipeline
+
+Completed
+
+↓
+
+Stage 4
+
+Analytics & Intelligence Layer
 
 Planned
 
@@ -448,11 +516,16 @@ Resolved:
 * Research Architecture
 * Automation Architecture
 * Repository Registry
+* Research Intake Pipeline (Tracker → Observation → Signal Candidate)
 
 Current Constraints:
 
+* Signal taxonomy immaturity (classification noise)
+* No signal aggregation or pattern detection
+* No analytics layer over accumulated signals
+* LLM provider fragmentation (Vertex AI migration pending)
+* Knowledge graph and relationship layer not yet built
 * Offer Discovery
-* Research Loop MVP
 * Content Factory Optimization
 * Content → Consultation Pipeline
 * Consultation → Revenue Pipeline
@@ -461,40 +534,36 @@ Current Constraints:
 
 # Current Strategic Objective
 
-Launch the first self-improving research loop.
+Transform accumulated signal candidates into actionable intelligence.
 
-Signal
-
-↓
-
-Phenomenon
+Signal Candidate
 
 ↓
 
-Research
+Aggregation
 
 ↓
 
-Asset
+Pattern Detection
 
 ↓
 
-Feedback
+Weekly Report
 
 ↓
 
-Observation
+Research Direction
 
 ↓
 
-Signal
+Knowledge Asset
 
 Objective:
 
-Validate that BrainCoach can continuously transform reality into knowledge and knowledge into measurable outcomes.
+Validate that BrainCoach can continuously transform captured reality into structured signals, detect patterns across time, and produce research intelligence that drives knowledge production.
 
 ---
 
 # Current Strategic Question
 
-How do we transform Self Learning Capability into a repeatable offer that parents are willing to buy?
+How do we transform accumulated signal data into repeatable research insights and a parent-facing offer?

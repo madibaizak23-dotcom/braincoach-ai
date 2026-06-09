@@ -8,6 +8,102 @@ Chronological record of major architectural decisions, milestones, discoveries, 
 
 ---
 
+2026-06-09
+Stage 3 Completed
+BrainCoach GPS OS V3 Production Baseline
+
+## 2026-06-09
+
+### Stage 3 — Observation & Signal Extraction Pipeline Completed
+
+Status: Completed
+
+Objective:
+
+Build the first operational research intake pipeline from Telegram capture through signal candidate staging.
+
+Scope Realignment:
+
+Stage 3 originally deferred from Stage 2 as Knowledge Relationships. Actual delivery focused on executable research intake because the system required a working observation-to-signal path before graph construction could produce meaningful edges.
+
+Implemented:
+
+* Telegram Tracker operational in production
+* Observation Layer operational (`observations` populated from tracker entries)
+* Signal Extraction Layer operational (`SIG_*` nodes in BrainCoach GPS OS V3)
+* `research_signal_candidates` receiving live data
+* BrainCoach GPS OS V3 deployed as current production workflow
+
+Validated Pipeline:
+
+Telegram (text / voice)
+
+↓
+
+Tracker Entry
+
+↓
+
+Observation
+
+↓
+
+Signal Candidate
+
+↓
+
+PostgreSQL persistence
+
+Validated Capabilities:
+
+* signal classification
+* confidence scoring
+* evidence extraction
+* metadata jsonb storage
+* relational links (entry → observation → candidate)
+
+First Validated Signal Categories:
+
+* self_initiation
+* dependence_external
+
+Decisions:
+
+* candidate staging before signal promotion — no direct observation-to-signal promotion
+* incremental workflow evolution — intake path preserved, signal layer added
+* BrainCoach GPS OS V3 as production baseline
+* classification noise tracked for Signal Taxonomy v2, no architectural change in Stage 3
+
+Known Limitation:
+
+Research notes and parent reflections can currently be misclassified as behavioral signals.
+
+Deferred to Stage 4:
+
+* Vertex AI Migration
+* Analytics Layer
+* Signal Aggregation
+* Pattern Detection
+* Weekly Reports
+* Knowledge relationship discovery
+* signal candidate promotion workflow
+
+Outcome:
+
+BrainCoach transitioned from registry-aware documentation architecture to operational research intake. The system can now transform live Telegram input into structured research objects and staged signal candidates.
+
+Next Stage:
+
+Stage 4 — Analytics & Intelligence Layer
+
+Goals:
+
+* unify LLM provider strategy through Vertex AI
+* aggregate signal candidates into analyzable datasets
+* detect recurring patterns across observations
+* produce weekly research reports
+* prepare foundation for knowledge graph edges
+
 ## 2026-06-05
 
 ### DEC-005 Adopted
@@ -448,6 +544,12 @@ Knowledge Production System
 ↓
 
 Signal Detection and Learning System
+
+↓
+
+Analytics and Intelligence Layer
+
+Current Stage: Stage 4 Planned
 
 Long-Term Goal:
 
