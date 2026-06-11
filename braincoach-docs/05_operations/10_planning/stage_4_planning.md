@@ -231,6 +231,41 @@ Stage 4 is complete when:
 
 ---
 
+ARCHITECTURAL HYPOTHESIS
+
+Primary entity of BrainCoach GPS:
+
+Development Profile
+
+Definition:
+
+A Development Profile represents a person whose developmental trajectory is being observed, measured, and analyzed over time.
+
+A Development Profile may contain:
+
+* observations
+* signals
+* phenomena
+* assessments
+* trainer feedback
+* parent feedback
+* self-reports
+* performance metrics
+* trajectory events
+
+Users interact with the system.
+
+Development Profiles are the objects being developed and analyzed.
+
+Relationship:
+
+User
+↓
+Development Profile
+↓
+Development Data
+
+
 ## Dependencies
 
 | Dependency | Source | Status |
@@ -263,3 +298,4 @@ When Stage 4 completes, update:
 * `07_automation/04_postgres/postgres-schema.md`
 * `07_automation/03_n8n/BrainCoach_GPS_OS_v1.md`
 * Relevant workflow specs in `07_automation/02_workflows/`
+

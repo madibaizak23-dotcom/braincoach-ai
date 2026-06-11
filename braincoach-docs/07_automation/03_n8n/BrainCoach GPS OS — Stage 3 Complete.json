@@ -542,6 +542,89 @@
           "name": "OpenAI account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8eb3ff0e-3c3c-4351-bc9c-2f50045b17ff",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1792,
+        736
+      ],
+      "id": "39bbdc7d-1b47-42cd-8d41-5dfedd0896f8",
+      "name": "HIS_CheckStart"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "=BrainCoach GPS помогает замечать важные сигналы развития подростка раньше, чем они становятся проблемой или результатом.\n\nВы можете сохранять наблюдения о спорте, учебе, дисциплине, самостоятельности и развитии ребенка.\n\n🎙 Отправьте голосовое сообщение\n\nили\n\n✍️ Напишите текстом\n\nЧто сейчас беспокоит вас больше всего как родителя?\n\nНапример:\n\n«На тренировку идет сам, а уроки без напоминаний не начинает»\n\n«После тренера всё делает, самостоятельно — редко»\n\n«Потенциал высокий, но результаты нестабильны»",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2080,
+        736
+      ],
+      "id": "6a7af338-d553-4b29-b12b-0f59e79c555f",
+      "name": "HIS_ReplyStart",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "=Неизвестная команды, просто собщение напишите или голосовое отправьте.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        880
+      ],
+      "id": "327ea1aa-6487-4864-95f0-72f00b37bd68",
+      "name": "HIS_UnknownCommand",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "GvDdmSpTtzrAfccU",
+          "name": "BrainCoach GPS | Malik_main_assiatant_bo"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -635,6 +718,13 @@
         [
           {
             "node": "HIS_LoadEntries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HIS_CheckStart",
             "type": "main",
             "index": 0
           }
@@ -824,6 +914,24 @@
           }
         ]
       ]
+    },
+    "HIS_CheckStart": {
+      "main": [
+        [
+          {
+            "node": "HIS_ReplyStart",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HIS_UnknownCommand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -831,7 +939,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ce9fea18-1d35-49cd-a228-b052d85de0ab",
+  "versionId": "90aacfd4-24a9-4e2d-a2b3-13ced960d31a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "48d6698760d67e9b0cb2984cfccb6ee712afdcc3e47735c395f68c6ceaddea3c"
