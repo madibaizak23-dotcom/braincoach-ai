@@ -1,8 +1,8 @@
 # PostgreSQL Schema
 
 Status: Active DBA Snapshot
-Last Updated: 2026-06-09
-Database: `braincoach_dev`
+Last Updated: 2026-06-12
+Database: `braincoach_dev`, `bgs_core`
 Schema: `public`
 
 ## Purpose
@@ -22,6 +22,63 @@ PostgreSQL owns:
 The current source snapshot was collected from `information_schema.columns`.
 
 ## Current Inventory
+
+## BGS Core GPS MVP-1 Snapshot
+
+Source:
+
+Manual live `bgs_core` confirmation after applying `004_gps_reality_tracker_mvp1.sql` in Cloud SQL.
+
+Status:
+
+Applied manually by owner on 2026-06-12. Codex did not apply the migration.
+
+### Base Tables Confirmed In `bgs_core`
+
+| table | BrainCoach role |
+| --- | --- |
+| `trajectory_domains` | lookup table for GPS trajectory domains |
+| `trajectories` | one development trajectory for a person |
+| `person_roles` | person roles in a context, optionally linked to a trajectory |
+| `activity_types` | lookup table for allowed activity types |
+| `activity_events` | concrete activity facts for Reality Tracker |
+| `activity_confirmations` | confirmations, corrections, and disputes for activity events |
+| `trajectory_entries` | free-form trajectory notes, linked to trajectory/person and optionally to tracker entries or observations |
+
+### Seed Data Confirmed
+
+| table | rows | confirmed values |
+| --- | ---: | --- |
+| `trajectory_domains` | 7 | `sport`, `career`, `education`, `relationships`, `self_learning`, `health`, `family` |
+| `activity_types` | 11 | `ice`, `second_ice`, `dribbling`, `english`, `physmath`, `gym`, `recovery`, `nutrition`, `sleep`, `study`, `other` |
+
+### Safety Confirmation
+
+The GPS MVP-1 migration did not change existing Conversation Engine tables:
+
+* `conversations`
+* `messages`
+* `conversation_events`
+
+The migration did not create the later GPS interpretation tables:
+
+* `trajectory_matrix_snapshots`
+* `gps_reports`
+
+### Repository Alignment
+
+The SQL and final review are stored in the existing PostgreSQL documentation folder:
+
+* `braincoach-docs/07_automation/04_postgres/004_gps_reality_tracker_mvp1.sql`
+* `braincoach-docs/07_automation/04_postgres/GPS_MVP1_MIGRATION_FINAL_REVIEW.md`
+
+Rule:
+
+Future migrations must update this schema file, `braincoach_owned_tables.md`, `system_evolution_log.md`, and `bgs_milestone_log.md` in the same working session as the migration.
+
+Governance reference:
+
+`braincoach-docs/07_automation/04_postgres/migration_governance_rule_v1.md`
 
 ### Base Tables
 

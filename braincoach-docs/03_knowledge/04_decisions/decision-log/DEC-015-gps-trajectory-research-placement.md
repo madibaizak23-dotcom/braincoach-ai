@@ -31,8 +31,8 @@ The current placement is:
 - Research: `braincoach-docs/03_knowledge/01_research/gps_trajectory_hypotheses_v1.md`
 - Intelligence synthesis: `braincoach-docs/03_knowledge/02_intelligence/gps_trajectory_intelligence_v1.md`
 - Ontology candidates: `braincoach-docs/02_ontology/gps_ontology_candidates_v1.md`
-- Session capture: `inbox/research/GPS_SESSION_DISCOVERY.md`
-- Discovery report: `docs/GPS_ONTOLOGY_DISCOVERY_REPORT.md`
+- Session capture: `braincoach-docs/03_knowledge/01_research/GPS_SESSION_DISCOVERY.md`
+- Discovery report: `braincoach-docs/02_ontology/GPS_ONTOLOGY_DISCOVERY_REPORT.md`
 
 No Canon, Foundation, Phenomenon Registry, or accepted Registry update is approved by this decision.
 
@@ -73,4 +73,3 @@ The GPS trajectory objects must not be treated as canonical until explicitly pro
 - `braincoach-docs/03_knowledge/01_research/gps_trajectory_hypotheses_v1.md`
 - `braincoach-docs/03_knowledge/02_intelligence/gps_trajectory_intelligence_v1.md`
 - `braincoach-docs/02_ontology/gps_ontology_candidates_v1.md`
-

@@ -120,3 +120,48 @@ bgs_orch
 
 Status:
 SUCCESS
+
+---
+
+## MILESTONE-006
+
+Title:
+
+GPS MVP-1 Reality Tracker Foundation Applied
+
+Date:
+
+2026-06-12
+
+Completed:
+
+* Live `bgs_core` migration applied manually in Cloud SQL
+* `trajectory_domains` created
+* `trajectories` created
+* `person_roles` created
+* `activity_types` created
+* `activity_events` created
+* `activity_confirmations` created
+* `trajectory_entries` created
+* `trajectory_domains` seed confirmed: 7 rows
+* `activity_types` seed confirmed: 11 rows
+* Repository SQL and PostgreSQL docs placed under `braincoach-docs/07_automation/04_postgres`
+
+Safety:
+
+* Existing tables were not altered
+* Existing data was not deleted
+* Conversation Engine was not changed
+* `trajectory_matrix_snapshots` and `gps_reports` were not included in MVP-1
+
+Documentation Rule:
+
+Every future BGS database migration must be documented in the same working session: SQL file, schema docs, owned-table inventory, final review note, and milestone/system log entry.
+
+Formal Rule:
+
+`braincoach-docs/07_automation/04_postgres/migration_governance_rule_v1.md`
+
+Status:
+
+SUCCESS

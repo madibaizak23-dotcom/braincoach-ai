@@ -1,8 +1,8 @@
 # BrainCoach Owned Tables
 
 Status: Active DBA Rule
-Last Updated: 2026-06-09
-Database: `braincoach_dev`
+Last Updated: 2026-06-12
+Database: `braincoach_dev`, `bgs_core`
 Schema: `public`
 
 ## Purpose
@@ -18,6 +18,10 @@ Reason:
 DBA rule:
 
 BrainCoach documentation should list BrainCoach-owned tables separately from n8n platform tables unless the task is specifically about n8n infrastructure.
+
+Migration governance:
+
+All PostgreSQL migrations must follow `braincoach-docs/07_automation/04_postgres/migration_governance_rule_v1.md`.
 
 ## BrainCoach-Owned Tables
 
@@ -45,6 +49,27 @@ Current BrainCoach-owned base tables: 20
 | `system_decisions` | BrainCoach | simple system/user decision storage |
 | `tracker_entries` | BrainCoach | persistent tracker notes, insights, hypotheses, observations |
 | `user_profiles` | BrainCoach | aggregated user profile memory |
+
+## BGS Core-Owned Tables
+
+Current `bgs_core` MVP-1 Reality Tracker tables confirmed live on 2026-06-12: 7
+
+| table | ownership | role |
+| --- | --- | --- |
+| `activity_confirmations` | BrainCoach / BGS Core | confirmation, correction, or dispute records for activity events |
+| `activity_events` | BrainCoach / BGS Core | concrete activity facts for GPS Reality Tracker |
+| `activity_types` | BrainCoach / BGS Core | lookup table for allowed activity types |
+| `person_roles` | BrainCoach / BGS Core | role assignments for persons, optionally linked to trajectories |
+| `trajectories` | BrainCoach / BGS Core | one development trajectory for a person |
+| `trajectory_domains` | BrainCoach / BGS Core | lookup table for GPS trajectory domains |
+| `trajectory_entries` | BrainCoach / BGS Core | free-form trajectory notes linked to persons, trajectories, tracker entries, or observations |
+
+Live seed confirmation:
+
+| table | rows confirmed | date |
+| --- | ---: | --- |
+| `trajectory_domains` | 7 | 2026-06-12 |
+| `activity_types` | 11 | 2026-06-12 |
 
 ## BrainCoach-Owned Views
 
@@ -169,6 +194,19 @@ WHERE table_schema = 'public'
 
 Every new BrainCoach-owned PostgreSQL table must be documented in the same working session in which it is created.
 
+This is mandatory for both `braincoach_dev` and `bgs_core`.
+
+No database migration is considered complete until repository documentation and live database state are reconciled.
+
+Source of truth order:
+
+1. Live PostgreSQL
+2. SQL Migrations
+3. Database Canon / Governance Docs
+4. System Logs
+
+When sources disagree, Live PostgreSQL has priority.
+
 Required updates:
 
 1. Update `postgres-schema.md`
@@ -188,13 +226,25 @@ braincoach-docs/07_automation/04_postgres/{table_name}.md
    Recommended path:
 
 ```text
-migrations/{number}_create_{table_name}.sql
+braincoach-docs/07_automation/04_postgres/{number}_{migration_name}.sql
 ```
 
 5. If the table changes architecture boundaries, update:
 
 ```text
 braincoach-docs/03_knowledge/04_decisions/system_evolution_log.md
+```
+
+6. If the table is part of BGS runtime or product evolution, update:
+
+```text
+braincoach-docs/05_operations/12_reviews/bgs_milestone_log.md
+```
+
+7. Add a final migration review note in the same PostgreSQL folder when live state has been checked:
+
+```text
+braincoach-docs/07_automation/04_postgres/{MIGRATION_NAME}_FINAL_REVIEW.md
 ```
 
 Minimum table contract:
