@@ -1,3 +1,28 @@
+## DEC-015 GPS Trajectory Research Placement
+
+Date: 2026-06-12
+
+Decision:
+
+GPS trajectory hypotheses are placed first in Research, with a draft Intelligence synthesis and draft Ontology Candidates staging file.
+
+No Canon, Foundation, Phenomenon Registry, or accepted Registry update is approved.
+
+Status:
+
+Accepted
+
+Related:
+
+* GPS-HYP-001 Resonance vs Dissonance
+* GPS-HYP-002 Desired State to Current State Gap
+* GPS-HYP-003 Personal Boundaries as Trajectory Filter
+* GPS-HYP-004 Unified Trajectory Model
+* GPS-HYP-005 Fibonacci Lifecycle Hypothesis
+* gps_trajectory_hypotheses_v1
+* gps_trajectory_intelligence_v1
+* gps_ontology_candidates_v1
+
    
 ## DEC-008 Workflow Naming Convention v1
 
