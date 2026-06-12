@@ -1,0 +1,926 @@
+{
+  "name": "BrainCoach Summer Map v1 MVP",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst text = input.message_text || '';\nconst callbackData = input.callback_data || '';\n\nlet action = 'unknown';\nlet question_code = null;\nlet answer_value = null;\n\nif (callbackData === 'sm:start') action = 'start';\nelse if (callbackData === 'sm:gps') action = 'gps';\nelse if (callbackData === 'sm:share') action = 'share';\nelse if (callbackData === 'sm:restart') action = 'restart';\nelse {\n  const m = callbackData.match(/^sm:(q[1-4]):([1-4])$/);\n  if (m) {\n    action = 'answer';\n    question_code = m[1];\n    answer_value = m[2];\n  } else if (input.intent === 'start' || text.startsWith('/start')) {\n    action = 'open';\n  } else if (text) {\n    action = 'text';\n  }\n}\n\nreturn [{\n  json: {\n    telegram_user_id: Number(input.external_id),\n    external_id: String(input.external_id),\n    chat_id: input.chat_id,\n    first_name: input.first_name || 'Родитель',\n    source: input.source || 'text',\n\n    text,\n    callback_data: callbackData,\n    raw_content: text || callbackData || '',\n\n    action,\n    question_code,\n    answer_value,\n\n    start_param: input.start_param || null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        32
+      ],
+      "id": "4c91194f-3fe9-4d28-b256-1ffc30643ae2",
+      "name": "SYS_NormalizeUpdate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH person_row AS (\n  INSERT INTO persons (\n    external_id,\n    source,\n    role,\n    first_name,\n    status,\n    created_at,\n    updated_at\n  )\n  VALUES (\n     $1::text,\n    'telegram',\n    'parent',\n    'Родитель',\n    'active',\n    NOW(),\n    NOW()\n  )\n  ON CONFLICT DO NOTHING\n  RETURNING person_id\n),\nexisting_person AS (\n  SELECT person_id\n  FROM persons\n  WHERE source = 'telegram'\n    AND external_id = $1::text\n  ORDER BY created_at DESC\n  LIMIT 1\n),\np AS (\n  SELECT person_id FROM person_row\n  UNION ALL\n  SELECT person_id FROM existing_person\n  LIMIT 1\n),\nconversation_row AS (\n  INSERT INTO conversations (\n    person_id,\n    channel,\n    status,\n    current_stage,\n    started_at,\n    stage_updated_at,\n    last_message_at\n  )\n  SELECT\n    (SELECT person_id FROM p),\n    'telegram',\n    'active',\n    'new',\n    NOW(),\n    NOW(),\n    NOW()\n  WHERE NOT EXISTS (\n    SELECT 1\n    FROM conversations\n    WHERE person_id = (SELECT person_id FROM p)\n      AND channel = 'telegram'\n      AND status = 'active'\n  )\n  RETURNING conversation_id\n),\nexisting_conversation AS (\n  SELECT conversation_id, current_stage\n  FROM conversations\n  WHERE person_id = (SELECT person_id FROM p)\n    AND channel = 'telegram'\n    AND status = 'active'\n  ORDER BY started_at DESC\n  LIMIT 1\n),\nc AS (\n  SELECT conversation_id, 'new'::text AS current_stage FROM conversation_row\n  UNION ALL\n  SELECT conversation_id, current_stage FROM existing_conversation\n  LIMIT 1\n),\nactive_interview AS (\n  SELECT interview_id\n  FROM parent_interviews\n  WHERE person_id = (SELECT person_id FROM p)\n    AND status IN ('started', 'in_progress')\n  ORDER BY started_at DESC\n  LIMIT 1\n)\nSELECT\n  (SELECT person_id FROM p) AS person_id,\n  (SELECT conversation_id FROM c) AS conversation_id,\n  COALESCE((SELECT current_stage FROM c), 'new') AS current_stage,\n  (SELECT interview_id FROM active_interview) AS interview_id,\n  '{}'::jsonb AS summer_map_answers,\n  '{}'::jsonb AS summer_map_result;",
+        "options": {
+          "queryReplacement": "=={{ [\n  String($('SYS_NormalizeUpdate').first().json.external_id)\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -544,
+        32
+      ],
+      "id": "6d2a4c71-e093-4907-8bea-4863375029c1",
+      "name": "DB_LoadContext",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n  conversation_id,\n  role,\n  content,\n  created_at\n)\nVALUES (\n  '{{ $(\"DB_LoadContext\").first().json.conversation_id }}'::uuid,\n  'user',\n  '{{ ($(\"SYS_NormalizeUpdate\").first().json.raw_content || \"\").replace(/'/g, \"''\") }}',\n  NOW()\n)\nRETURNING message_id;",
+        "options": {
+          "queryReplacement": "=={{ [\n  $('DB_LoadContext').first().json.conversation_id,\n  $('SYS_NormalizeUpdate').first().json.raw_content || ''\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -304,
+        32
+      ],
+      "id": "cbe21233-dfe9-4ccd-af41-315f780aae5c",
+      "name": "DB_SaveRawMessage",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "﻿const input = $('SYS_NormalizeUpdate').first().json;\nconst ctx = $('DB_LoadContext').first().json;\n\nconst currentStage = ctx.current_stage || 'new';\nconst answers = ctx.summer_map_answers || {};\nconst savedResult = ctx.summer_map_result || {};\n\nconst personId = ctx.person_id;\nconst conversationId = ctx.conversation_id;\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction jsonSql(value) {\n  return `'${sqlEscape(JSON.stringify(value ?? {}))}'::jsonb`;\n}\n\nconst questions = {\n  q1: {\n    stage: 'waiting_q1',\n    nextStage: 'waiting_q2',\n    title: 'Ситуация 1',\n    text: `Если сегодня не напоминать ребёнку про его планы, что скорее всего произойдёт к вечеру?\n\n🟢 Сам — обычно сам найдёт, чем заняться\n\n🟡 Подсказки — иногда потребуется помощь взрослых\n\n🟠 Как получится — день сложится сам собой\n\n🔴 Экран — большая часть времени уйдёт в телефон или гаджеты\n\nЧто ближе?`,\n    options: {\n      '1': ['A', 'independent', 'Сам — обычно сам найдёт, чем заняться'],\n      '2': ['B', 'external_activation', 'Подсказки — иногда потребуется помощь взрослых'],\n      '3': ['C', 'no_direction', 'Как получится — день сложится сам собой'],\n      '4': ['D', 'passive', 'Экран — большая часть времени уйдёт в телефон или гаджеты']\n    }\n  },\n  q2: {\n    stage: 'waiting_q2',\n    nextStage: 'waiting_q3',\n    title: 'Ситуация 2',\n    text: `Представьте: сегодня вы спрашиваете:\n\n«Что ты хочешь успеть до конца лета?»\n\n🎯 Конкретно — отвечает с деталями и понятной идеей\n\n🙂 Есть идеи — примерно понимает, чего хочет\n\n🤔 Пока неясно — мысли есть, но без конкретики\n\n😶 Не знает — затрудняется ответить\n\nЧто ближе?`,\n    options: {\n      '1': ['A', 'goal_oriented', 'Конкретно — отвечает с деталями и понятной идеей'],\n      '2': ['B', 'vague_goals', 'Есть идеи — примерно понимает, чего хочет'],\n      '3': ['C', 'no_direction', 'Пока неясно — мысли есть, но без конкретики'],\n      '4': ['D', 'no_goals', 'Не знает — затрудняется ответить']\n    }\n  },\n  q3: {\n    stage: 'waiting_q3',\n    nextStage: 'waiting_q4',\n    title: 'Ситуация 3',\n    text: `Представьте, что у ребёнка впереди свободная неделя без школы, кружков и тренировок.\n\n🟢 Сам — найдёт занятия без напоминаний\n\n🟡 Частично — что-то организует сам, что-то с помощью\n\n🟠 Ждёт идей — скорее будет ждать предложений от взрослых\n\n🔴 Как получится — неделя пройдёт без чёткого плана\n\nЧто ближе?`,\n    options: {\n      '1': ['A', 'self_directed', 'Сам — найдёт занятия без напоминаний'],\n      '2': ['B', 'partial_self', 'Частично — что-то организует сам, что-то с помощью'],\n      '3': ['C', 'external_dependent', 'Ждёт идей — скорее будет ждать предложений от взрослых'],\n      '4': ['D', 'passive_drift', 'Как получится — неделя пройдёт без чёткого плана']\n    }\n  },\n  q4: {\n    stage: 'waiting_q4',\n    nextStage: 'completed',\n    title: 'Ситуация 4',\n    text: `Если посмотреть на лето целиком, кто сейчас больше задаёт направление?\n\n🟢 Сам ребёнок — обычно сам предлагает идеи и занятия\n\n🟡 Скорее он — инициатива часто идёт от ребёнка, но помощь тоже нужна\n\n🟠 Скорее мы — взрослые чаще предлагают и организуют\n\n🔴 Как получится — чёткого направления пока нет\n\nЧто ближе?`,\n    options: {\n      '1': ['A', 'full_ownership', 'Сам ребёнок — обычно сам предлагает идеи и занятия'],\n      '2': ['B', 'shared_ownership', 'Скорее он — инициатива часто идёт от ребёнка, но помощь тоже нужна'],\n      '3': ['C', 'parent_driven', 'Скорее мы — взрослые чаще предлагают и организуют'],\n      '4': ['D', 'circumstance_driven', 'Как получится — чёткого направления пока нет']\n    }\n  }\n};\n\nconst buttonLabels = {\n  q1: {\n    '1': '🟢 Сам',\n    '2': '🟡 Подсказки',\n    '3': '🟠 Как получится',\n    '4': '🔴 Экран'\n  },\n  q2: {\n    '1': '🎯 Конкретно',\n    '2': '🙂 Есть идеи',\n    '3': '🤔 Пока неясно',\n    '4': '😶 Не знает'\n  },\n  q3: {\n    '1': '🟢 Сам',\n    '2': '🟡 Частично',\n    '3': '🟠 Ждёт идей',\n    '4': '🔴 Как получится'\n  },\n  q4: {\n    '1': '🟢 Сам ребёнок',\n    '2': '🟡 Скорее он',\n    '3': '🟠 Скорее мы',\n    '4': '🔴 Как получится'\n  }\n};\n\nfunction inline(rows) {\n  return {\n    inline_keyboard: rows.map(row => row.map(button => ({\n      text: button.text,\n      callback_data: button.data\n    })))\n  };\n}\n\nfunction questionMessage(code) {\n  const q = questions[code];\n  const labels = buttonLabels[code];\n\n  return {\n    text: `${q.title}\\n\\n${q.text}`,\n    reply_markup: inline([\n      [{ text: labels['1'], data: `sm:${code}:1` }],\n      [{ text: labels['2'], data: `sm:${code}:2` }],\n      [{ text: labels['3'], data: `sm:${code}:3` }],\n      [{ text: labels['4'], data: `sm:${code}:4` }]\n    ])\n  };\n}\nfunction stageToQuestion(stage) {\n  return Object.keys(questions).find(k => questions[k].stage === stage) || null;\n}\n\nfunction calculateResult(nextAnswers) {\n  const counts = { A: 0, B: 0, C: 0, D: 0 };\n  const signals = [];\n\n  for (const code of ['q1', 'q2', 'q3', 'q4']) {\n    const a = nextAnswers[code];\n    if (!a) continue;\n\n    counts[a.signal_code] = (counts[a.signal_code] || 0) + 1;\n    signals.push({\n      question_code: code,\n      signal_code: a.signal_code,\n      signal_label: a.signal_label,\n      response_text: a.response_text\n    });\n  }\n\n  if (counts.A >= 3) {\n    return {\n      result_type: 'route_emerging',\n      result_title: 'Маршрут уже появился',\n      dominant_signal: 'A',\n      counts,\n      signals\n    };\n  }\n\n  if (counts.B >= 2) {\n    return {\n      result_type: 'external_launch',\n      result_title: 'Маршрут зависит от внешнего запуска',\n      dominant_signal: 'B',\n      counts,\n      signals\n    };\n  }\n\n  return {\n    result_type: 'open_water',\n    result_title: 'Открытое плавание',\n    dominant_signal: 'C_D',\n    counts,\n    signals\n  };\n}\n\nfunction resultText(result) {\n  const bodies = {\n    route_emerging:\n`Ваш результат:\n\n🧭 ${result.result_title}\n\nРебёнок начинает самостоятельно строить своё лето. Есть признаки собственной навигации.\n\nРиск августа: цели могут остаться только идеями — без системы движения к ним.`,\n\n    external_launch:\n`Ваш результат:\n\n🔄 ${result.result_title}\n\nРебёнок способен двигаться вперёд, но чаще — после внешнего толчка.\n\nРиск августа: много хороших идей останутся нереализованными к концу августа.`,\n\n    open_water:\n`Ваш результат:\n\n🌊 ${result.result_title}\n\nЭто не означает, что ребёнку неинтересно развиваться.\n\nОбычно это означает, что лето пока управляется обстоятельствами, а не собственным маршрутом ребёнка.\n\nЕсли ничего не менять, август часто оказывается похожим на июнь — только времени уже меньше.`\n  };\n\n  return bodies[result.result_type] || bodies.open_water;\n}\n\nfunction offerText() {\n  return `Именно для таких ситуаций мы сделали BrainCoach GPS.\n\nМы заметили, что большинству детей сложно удерживать собственный маршрут без внешней системы поддержки.\n\nBrainCoach GPS Summer Tracker помогает ребёнку:\n\n✓ видеть собственные цели\n✓ планировать неделю\n✓ замечать прогресс\n✓ получать еженедельный отчёт о своём лете`;\n}\n\nfunction offerKeyboard() {\n  return inline([\n    [{ text: '🚀 Получить Summer GPS', data: 'sm:gps' }],\n    [{ text: '📤 Поделиться картой', data: 'sm:share' }]\n  ]);\n}\n\nfunction eventSql(eventType, payload) {\n  return `\nINSERT INTO conversation_events (\n  conversation_id,\n  person_id,\n  event_type,\n  event_payload,\n  created_at\n)\nVALUES (\n  '${conversationId}'::uuid,\n  '${personId}'::uuid,\n  '${sqlEscape(eventType)}',\n  ${jsonSql({ source: 'summer_map', ...payload })},\n  NOW()\n)\nRETURNING event_id;\n`;\n}\n\nlet sql = eventSql('error', {\n  event_name: 'summer_map_invalid_input',\n  old_stage: currentStage,\n  new_stage: currentStage,\n  action: input.action,\n  text: input.text,\n  callback_data: input.callback_data\n});\n\nlet response = {\n  text: 'Нажмите /start, чтобы открыть Summer Map.',\n  reply_markup: inline([[{ text: 'Начать', data: 'sm:start' }]])\n};\n\nlet route = 'invalid';\n\nif (input.action === 'open') {\n  route = 'open';\n\n  sql = `\nUPDATE conversations\nSET\n  current_stage = CASE\n    WHEN current_stage IN ('new','waiting_q1','waiting_q2','waiting_q3','waiting_q4','completed')\n      THEN current_stage\n    ELSE 'new'\n  END,\n  stage_updated_at = NOW(),\n  last_message_at = NOW()\nWHERE conversation_id = '${conversationId}'::uuid;\n\n${eventSql('conversation_created', {\n  event_name: 'summer_map_opened',\n  old_stage: currentStage,\n  new_stage: 'new'\n})}\n`;\n\n  response = {\n    text: `Привет 👋\n\nЛето уже идёт.\n\nБольшинство родителей знают, чем занят ребёнок.\n\nНо гораздо сложнее понять другое:\n\nКто сейчас управляет его летом?\n\nСам ребёнок или обстоятельства?\n\nЯ покажу это через 4 коротких ситуации. Займёт около 2 минут.`,\n    reply_markup: inline([[{ text: 'Начать', data: 'sm:start' }]])\n  };\n}\n\nif (input.action === 'start' || input.action === 'restart') {\n  route = input.action;\n\n  const activeQuestion = stageToQuestion(currentStage);\n\n  if (input.action === 'start' && activeQuestion) {\n    sql = eventSql('error', {\n      event_name: 'summer_map_duplicate_click',\n      old_stage: currentStage,\n      new_stage: currentStage,\n      reason: 'start_during_question'\n    });\n    response = questionMessage(activeQuestion);\n  } else {\n    sql = `\nWITH completed_old AS (\n  UPDATE parent_interviews\n  SET\n    status = 'completed',\n    completed_at = COALESCE(completed_at, NOW())\n  WHERE person_id = '${personId}'::uuid\n    AND status IN ('started','in_progress')\n  RETURNING interview_id\n),\nnew_interview AS (\n  INSERT INTO parent_interviews (\n    person_id,\n    status,\n    started_at\n  )\n  VALUES (\n    '${personId}'::uuid,\n    'started',\n    NOW()\n  )\n  RETURNING interview_id\n),\nstage_update AS (\n  UPDATE conversations\n  SET\n    current_stage = 'waiting_q1',\n    stage_updated_at = NOW(),\n    last_message_at = NOW()\n  WHERE conversation_id = '${conversationId}'::uuid\n  RETURNING conversation_id\n),\nevent_insert AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n    'interview_started',\n    jsonb_build_object(\n      'source','summer_map',\n      'event_name','summer_map_started',\n      'old_stage','${sqlEscape(currentStage)}',\n      'new_stage','waiting_q1',\n      'interview_id',(SELECT interview_id FROM new_interview)\n    ),\n    NOW()\n  )\n  RETURNING event_id\n)\nSELECT event_id FROM event_insert;\n`;\n\n    response = questionMessage('q1');\n  }\n}\n\nif (input.action === 'answer') {\n  const expected = stageToQuestion(currentStage);\n  const q = questions[input.question_code];\n\n  if (!expected || expected !== input.question_code || !q?.options[input.answer_value]) {\n    route = 'unexpected_answer';\n\n    sql = eventSql('error', {\n      event_name: 'summer_map_unexpected_callback',\n      old_stage: currentStage,\n      new_stage: currentStage,\n      callback_data: input.callback_data,\n      expected\n    });\n\n    response = expected\n      ? questionMessage(expected)\n      : {\n          text: 'Эта карта уже завершена. Можно посмотреть результат или поделиться картой.',\n          reply_markup: offerKeyboard()\n        };\n  } else {\n    const [signal_code, signal_label, response_text] = q.options[input.answer_value];\n\n    const nextAnswers = {\n      ...answers,\n      [input.question_code]: {\n        signal_code,\n        signal_label,\n        response_text\n      }\n    };\n\n    const meta = {\n      event_name: `question_${input.question_code.slice(1)}_answered`,\n      question_code: input.question_code,\n      response_text,\n      response_signal: signal_code,\n      signal_label,\n      old_stage: currentStage,\n      new_stage: q.nextStage\n    };\n\n    if (input.question_code !== 'q4') {\n      route = 'answer_next_question';\n\n      sql = `\nWITH active_interview AS (\n  SELECT interview_id\n  FROM parent_interviews\n  WHERE person_id = '${personId}'::uuid\n    AND status IN ('started','in_progress')\n  ORDER BY started_at DESC\n  LIMIT 1\n),\nmark_interview AS (\n  UPDATE parent_interviews\n  SET status = 'in_progress'\n  WHERE interview_id = (SELECT interview_id FROM active_interview)\n  RETURNING interview_id\n),\ndelete_old AS (\n  DELETE FROM interview_responses\n  WHERE interview_id = (SELECT interview_id FROM active_interview)\n    AND question_code = '${sqlEscape(input.question_code)}'\n),\nsave_response AS (\n  INSERT INTO interview_responses (\n    interview_id,\n    question_code,\n    response_text,\n    response_signal,\n    created_at\n  )\n  SELECT\n    interview_id,\n    '${sqlEscape(input.question_code)}',\n    '${sqlEscape(response_text)}',\n    '${sqlEscape(signal_code)}',\n    NOW()\n  FROM active_interview\n  RETURNING response_id\n),\nstage_update AS (\n  UPDATE conversations\n  SET\n    current_stage = '${sqlEscape(q.nextStage)}',\n    stage_updated_at = NOW(),\n    last_message_at = NOW()\n  WHERE conversation_id = '${conversationId}'::uuid\n  RETURNING conversation_id\n),\nevent_insert AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n    'response_saved',\n    ${jsonSql({ source: 'summer_map', ...meta })},\n    NOW()\n  )\n  RETURNING event_id\n)\nSELECT event_id FROM event_insert;\n`;\n\n      response = questionMessage(\n        input.question_code === 'q1' ? 'q2' :\n        input.question_code === 'q2' ? 'q3' :\n        'q4'\n      );\n    } else {\n      route = 'answer_result_offer';\n\n      const result = calculateResult(nextAnswers);\n\n      sql = `\nWITH active_interview AS (\n  SELECT interview_id\n  FROM parent_interviews\n  WHERE person_id = '${personId}'::uuid\n    AND status IN ('started','in_progress')\n  ORDER BY started_at DESC\n  LIMIT 1\n),\ndelete_old AS (\n  DELETE FROM interview_responses\n  WHERE interview_id = (SELECT interview_id FROM active_interview)\n    AND question_code = 'q4'\n),\nsave_response AS (\n  INSERT INTO interview_responses (\n    interview_id,\n    question_code,\n    response_text,\n    response_signal,\n    created_at\n  )\n  SELECT\n    interview_id,\n    'q4',\n    '${sqlEscape(response_text)}',\n    '${sqlEscape(signal_code)}',\n    NOW()\n  FROM active_interview\n  RETURNING response_id\n),\ncomplete_interview AS (\n  UPDATE parent_interviews\n  SET\n    status = 'completed',\n    completed_at = NOW()\n  WHERE interview_id = (SELECT interview_id FROM active_interview)\n  RETURNING interview_id\n),\nstage_update AS (\n  UPDATE conversations\n  SET\n    current_stage = 'completed',\n    stage_updated_at = NOW(),\n    last_message_at = NOW()\n  WHERE conversation_id = '${conversationId}'::uuid\n  RETURNING conversation_id\n),\nq4_event AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n    'response_saved',\n    ${jsonSql({ source: 'summer_map', ...meta })},\n    NOW()\n  )\n  RETURNING event_id\n),\nresult_event AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n    'analysis_completed',\n    ${jsonSql({\n      source: 'summer_map',\n      event_name: 'summer_result_generated',\n      ...result\n    })},\n    NOW()\n  )\n  RETURNING event_id\n),\nshown_event AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n    'analysis_completed',\n    ${jsonSql({\n      source: 'summer_map',\n      event_name: 'summer_result_shown',\n      result_type: result.result_type,\n      result_title: result.result_title\n    })},\n    NOW()\n  )\n  RETURNING event_id\n),\noffer_event AS (\n  INSERT INTO conversation_events (\n    conversation_id,\n    person_id,\n    event_type,\n    event_payload,\n    created_at\n  )\n  VALUES (\n    '${conversationId}'::uuid,\n    '${personId}'::uuid,\n   'stage_changed',\n    ${jsonSql({\n      source: 'summer_map',\n      event_name: 'tracker_offer_shown',\n      offer_id: 'summer_gps_2026_pilot',\n      result_type: result.result_type\n    })},\n    NOW()\n  )\n  RETURNING event_id\n)\nSELECT event_id FROM offer_event;\n`;\n\n      response = {\n        text: `${resultText(result)}\\n\\n${offerText()}`,\n        reply_markup: offerKeyboard()\n      };\n    }\n  }\n}\n\nif (input.action === 'gps') {\n  route = 'gps';\n\n  const resultType = savedResult.result_type || null;\n\n  sql = `\nUPDATE conversations\nSET\n  current_stage = 'completed',\n  stage_updated_at = NOW(),\n  last_message_at = NOW()\nWHERE conversation_id = '${conversationId}'::uuid;\n\n${eventSql('conversation_completed', {\n  event_name: 'tracker_button_clicked',\n  old_stage: currentStage,\n  new_stage: 'completed',\n  offer_id: 'summer_gps_2026_pilot',\n  result_type: resultType\n})}\n`;\n\n  response = {\n    text: 'Отлично. Я передал интерес к Summer GPS.\\n\\nСледующий шаг: напишите, пожалуйста, возраст ребёнка и удобный способ связи. Мы вернёмся с деталями пилота.',\n    reply_markup: inline([[{ text: '📤 Поделиться картой', data: 'sm:share' }]])\n  };\n}\n\nif (input.action === 'share') {\n  route = 'share';\n\n  const referralCode = `sm_${input.telegram_user_id}`;\n  const botLink = `https://t.me/YOUR_BOT_USERNAME?start=${referralCode}`;\n\n  sql = eventSql('stage_changed', {\n    event_name: 'referral_clicked',\n    old_stage: currentStage,\n    new_stage: currentStage,\n    referral_code: referralCode,\n    bot_link: botLink\n  });\n\n  response = {\n    text: `Если среди ваших знакомых есть родители, которые тоже задумываются о том, как проходит лето их ребёнка, — отправьте им эту карту.\n\n${botLink}`,\n    reply_markup: inline([[{ text: '🚀 Получить Summer GPS', data: 'sm:gps' }]])\n  };\n}\n\nif (input.action === 'text' && currentStage && currentStage.startsWith('waiting_q')) {\n  route = 'text_during_question';\n\n  const expected = stageToQuestion(currentStage);\n  const qm = questionMessage(expected);\n\n  sql = eventSql('error', {\n    event_name: 'summer_map_invalid_input',\n    old_stage: currentStage,\n    new_stage: currentStage,\n    text: input.text,\n    reason: 'text_instead_of_button'\n  });\n\n  response = {\n    text: `Выберите один из вариантов кнопками ниже.\n\n${qm.text}`,\n    reply_markup: qm.reply_markup\n  };\n}\n\nreturn [{\n  json: {\n    ...input,\n    current_stage: currentStage,\n    route,\n    persist_sql: sql,\n    persist_params: [],\n    response_text: response.text,\n    reply_markup: response.reply_markup\n  }\n}];\r\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        32
+      ],
+      "id": "a3d73a5e-6be8-46a5-92f3-f2e23e3c77eb",
+      "name": "SYS_ProcessSummerMap"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.persist_sql }}",
+        "options": {
+          "queryReplacement": "="
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        176,
+        32
+      ],
+      "id": "ec535e26-c96c-40b8-aef7-713739e5d8ff",
+      "name": "DB_PersistStateAndEvents",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "voice-check",
+              "leftValue": "={{ $json.message.voice?.file_id || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -656,
+        -368
+      ],
+      "id": "4d1ae175-3903-400d-90df-89bf9dddb3f9",
+      "name": "TG_CheckVoice"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        -576
+      ],
+      "id": "028d354f-590c-4cf5-841d-3558b014bb05",
+      "name": "TG_GetVoiceFile",
+      "webhookId": "59cf3a22-0bd3-4336-8fd7-1d913e84a254",
+      "credentials": {
+        "telegramApi": {
+          "id": "HBPe2SVgmEO2brKK",
+          "name": "BrainCoach Concierge"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        -576
+      ],
+      "id": "8087c7f5-3a37-43a7-81c1-26a35c79c9e1",
+      "name": "AI_TranscribeVoice",
+      "credentials": {
+        "openAiApi": {
+          "id": "pPPUaCCHLhRsrNdr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    text: $json.text || \"\",\n    route: \"voice\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -560
+      ],
+      "id": "79985d49-ec7b-40ef-8529-b775307a6e63",
+      "name": "CODE_NormalizeVoice"
+    },
+    {
+      "parameters": {
+        "jsCode": "const triggerItem = $('TG_Trigger').first().json;\n\nconst isCallback = !!triggerItem.callback_query;\n\nconst msg = isCallback\n  ? triggerItem.callback_query.message\n  : triggerItem.message;\n\nconst from = isCallback\n  ? triggerItem.callback_query.from\n  : triggerItem.message.from;\n\nconst chat = msg.chat;\n\nlet messageText = '';\n\nif ($json.route === 'voice') {\n  messageText = $json.text || '';\n} else {\n  messageText =\n    triggerItem.message?.text ||\n    triggerItem.callback_query?.data ||\n    '';\n}\n\nreturn [{\n  json: {\n    external_id: String(from.id),\n    first_name: from.first_name || 'Родитель',\n    chat_id: chat.id,\n\n    message_text: messageText,\n    callback_data: triggerItem.callback_query?.data || '',\n\n    start_param:\n      triggerItem.message?.text?.startsWith('/start ')\n        ? triggerItem.message.text.split(' ')[1]\n        : null,\n\n    intent:\n      triggerItem.message?.text?.startsWith('/start')\n        ? 'start'\n        : isCallback\n          ? 'callback'\n          : 'message',\n\n    source:\n      $json.route === 'voice'\n        ? 'voice'\n        : isCallback\n          ? 'callback'\n          : 'text'\n  }\n}];"
+      },
+      "id": "05947a6a-e912-46af-b5c5-66b718bde36f",
+      "name": "CODE_NormalizeIncoming",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -896,
+        -368
+      ],
+      "id": "ad432b92-37ac-4879-9452-347774260e74",
+      "name": "TG_Trigger",
+      "webhookId": "a7f1ebbc-a211-40b7-a27b-4a735085eed3",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const summerMap = $('SYS_ProcessSummerMap').first().json;\nconst replyMarkup = summerMap.reply_markup || {};\nconst inlineKeyboard = Array.isArray(replyMarkup.inline_keyboard)\n  ? replyMarkup.inline_keyboard\n  : [];\n\nconst firstCallback =\n  inlineKeyboard?.[0]?.[0]?.callback_data || '';\n\nlet screen = 'fallback';\n\nif (firstCallback === 'sm:start') {\n  screen = 'intro';\n}\nelse if (firstCallback.startsWith('sm:q1:')) {\n  screen = 'q1';\n}\nelse if (firstCallback.startsWith('sm:q2:')) {\n  screen = 'q2';\n}\nelse if (firstCallback.startsWith('sm:q3:')) {\n  screen = 'q3';\n}\nelse if (firstCallback.startsWith('sm:q4:')) {\n  screen = 'q4';\n}\nelse if (firstCallback === 'sm:gps') {\n  screen = 'offer';\n}\nelse if (firstCallback === 'sm:share') {\n  screen = 'share';\n}\n\n/*\n  Новое:\n  если опрос завершён и есть результат\n*/\nelse if (\n  summerMap.current_stage === 'completed' ||\n  summerMap.route === 'result'\n) {\n  screen = 'result';\n}\n\nelse if (summerMap.route === 'gps') {\n  screen = 'gps';\n}\nelse if (summerMap.route === 'share') {\n  screen = 'share';\n}\n\nreturn [{\n  json: {\n    chat_id: summerMap.chat_id,\n    text: summerMap.response_text,\n\n    route: summerMap.route,\n    current_stage: summerMap.current_stage,\n\n    screen,\n    first_callback: firstCallback,\n\n    reply_markup: replyMarkup,\n    reply_markup_string: JSON.stringify(replyMarkup),\n\n    debug: {\n      has_reply_markup: !!summerMap.reply_markup,\n      has_inline_keyboard: inlineKeyboard.length > 0,\n      keyboard_rows: inlineKeyboard.length,\n      first_row: inlineKeyboard[0] || null\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        32
+      ],
+      "id": "da028cec-05c0-45fb-a854-9c450936c48e",
+      "name": "CODE_FormatReplyMarkup"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "intro",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2edae469-e17e-4a7c-91c3-f76d2cd34c8a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "q1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bba8cf3f-bb2c-4933-8735-5161e4199fbb"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "q2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "17b46c2c-a199-43e7-9338-faa1b930b624"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "q3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4006dc7b-df46-4412-87a6-4a7232e745d5"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "q4",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4ad30116-f307-4baa-8c33-63b871c4e39a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "81207206-09d2-4b47-ae8e-b6f8d86e3080",
+                    "leftValue": "={{ $json.screen }}",
+                    "rightValue": "result",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "b1c27ea3-7a32-4242-a4d2-1fdca5b118e2",
+      "name": "SWITCH_CurrentStage",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        608,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('SYS_ProcessSummerMap').first().json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🎯 Конкретно",
+                    "additionalFields": {
+                      "callback_data": "sm:q2:1"
+                    }
+                  },
+                  {
+                    "text": "🙂 Есть идеи",
+                    "additionalFields": {
+                      "callback_data": "sm:q2:2"
+                    }
+                  },
+                  {
+                    "text": "🤔 Неясно",
+                    "additionalFields": {
+                      "callback_data": "sm:q2:3"
+                    }
+                  },
+                  {
+                    "text": "😶 Не знает",
+                    "additionalFields": {
+                      "callback_data": "sm:q2:4"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        -16
+      ],
+      "id": "d18d2625-e74f-4e8d-b1c9-8f1171b8f8bd",
+      "name": "TG_Q2",
+      "webhookId": "51320433-b547-404a-a6a2-c1a96cda9680",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('SYS_ProcessSummerMap').first().json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🟢 Сам",
+                    "additionalFields": {
+                      "callback_data": "sm:q3:1"
+                    }
+                  },
+                  {
+                    "text": "🟡 Частично",
+                    "additionalFields": {
+                      "callback_data": "sm:q3:2"
+                    }
+                  },
+                  {
+                    "text": "🟠 Ждёт идей",
+                    "additionalFields": {
+                      "callback_data": "sm:q3:3"
+                    }
+                  },
+                  {
+                    "text": "🔴 Как получится",
+                    "additionalFields": {
+                      "callback_data": "sm:q3:4"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        32
+      ],
+      "id": "2f1d11b1-f747-4065-bd6a-b70bb0bd1e44",
+      "name": "TG_Q3",
+      "webhookId": "51320433-b547-404a-a6a2-c1a96cda9680",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('SYS_ProcessSummerMap').first().json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🟢 Сам ребёнок",
+                    "additionalFields": {
+                      "callback_data": "sm:q4:1"
+                    }
+                  },
+                  {
+                    "text": "🟡 Скорее он",
+                    "additionalFields": {
+                      "callback_data": "sm:q4:2"
+                    }
+                  },
+                  {
+                    "text": "🟠 Скорее мы",
+                    "additionalFields": {
+                      "callback_data": "sm:q4:3"
+                    }
+                  },
+                  {
+                    "text": "🔴 Как получится",
+                    "additionalFields": {
+                      "callback_data": "sm:q4:4"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1056,
+        96
+      ],
+      "id": "f4a8f9b7-32e2-42a5-84e2-4d1121f587bf",
+      "name": "TG_Q4",
+      "webhookId": "51320433-b547-404a-a6a2-c1a96cda9680",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('SYS_ProcessSummerMap').first().json.chat_id }}",
+        "text": "={{ $('SYS_ProcessSummerMap').first().json.response_text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🟢 Сам",
+                    "additionalFields": {
+                      "callback_data": "sm:q1:1"
+                    }
+                  },
+                  {
+                    "text": "🟡 Подсказки",
+                    "additionalFields": {
+                      "callback_data": "sm:q1:2"
+                    }
+                  },
+                  {
+                    "text": "🟠 Как получится",
+                    "additionalFields": {
+                      "callback_data": "sm:q1:3"
+                    }
+                  },
+                  {
+                    "text": "🔴 Телефон",
+                    "additionalFields": {
+                      "callback_data": "sm:q1:4"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1168,
+        -112
+      ],
+      "id": "09f3a6e7-d905-4f0e-ac82-812862c08b3d",
+      "name": "TG_Q1",
+      "webhookId": "51320433-b547-404a-a6a2-c1a96cda9680",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('SYS_ProcessSummerMap').first().json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Начать",
+                    "additionalFields": {
+                      "callback_data": "sm:start"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        -160
+      ],
+      "id": "5dc197f5-9b14-4bf0-bfbe-593a1e322fd6",
+      "name": "TG_Intro",
+      "webhookId": "d4643db8-338d-4e42-b484-68fbf03206a1",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📤 Поделиться",
+                    "additionalFields": {
+                      "url": "https://t.me/share/url?url=https://t.me/BrainCoach_intake_bot"
+                    }
+                  },
+                  {
+                    "text": "🎯 Узнать про GPS",
+                    "additionalFields": {
+                      "url": "https://t.me/BrainCoach_GPS_bot?start=summer_map"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        272
+      ],
+      "id": "5b3236c5-c573-4981-a920-fa4990b87b76",
+      "name": "TG_Result",
+      "webhookId": "3c86fb8d-3278-4095-81f8-d7db5e1cbd59",
+      "credentials": {
+        "telegramApi": {
+          "id": "ttw93sOjEHrXqsUw",
+          "name": "BrainCoach Concierge - intake_bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "SYS_NormalizeUpdate": {
+      "main": [
+        [
+          {
+            "node": "DB_LoadContext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB_LoadContext": {
+      "main": [
+        [
+          {
+            "node": "DB_SaveRawMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB_SaveRawMessage": {
+      "main": [
+        [
+          {
+            "node": "SYS_ProcessSummerMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_ProcessSummerMap": {
+      "main": [
+        [
+          {
+            "node": "DB_PersistStateAndEvents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB_PersistStateAndEvents": {
+      "main": [
+        [
+          {
+            "node": "CODE_FormatReplyMarkup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG_CheckVoice": {
+      "main": [
+        [
+          {
+            "node": "TG_GetVoiceFile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CODE_NormalizeIncoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG_GetVoiceFile": {
+      "main": [
+        [
+          {
+            "node": "AI_TranscribeVoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI_TranscribeVoice": {
+      "main": [
+        [
+          {
+            "node": "CODE_NormalizeVoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CODE_NormalizeVoice": {
+      "main": [
+        [
+          {
+            "node": "CODE_NormalizeIncoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CODE_NormalizeIncoming": {
+      "main": [
+        [
+          {
+            "node": "SYS_NormalizeUpdate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG_Trigger": {
+      "main": [
+        [
+          {
+            "node": "TG_CheckVoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CODE_FormatReplyMarkup": {
+      "main": [
+        [
+          {
+            "node": "SWITCH_CurrentStage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SWITCH_CurrentStage": {
+      "main": [
+        [
+          {
+            "node": "TG_Intro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG_Q1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG_Q2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG_Q3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG_Q4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "TG_Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG_Q1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ff6f7b1a-2b88-436e-bd08-74f1a6a24ca0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab89f6b3490ade6eb9cfd01ad4970c303928df2abf26973c8193b5177427e7ef"
+  },
+  "id": "WdcfM7kDTXl8xJpI",
+  "tags": []
+}
