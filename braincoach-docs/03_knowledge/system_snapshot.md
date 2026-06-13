@@ -1,6 +1,6 @@
 # BRAINCOACH SYSTEM SNAPSHOT
 
-Date: 2026-06-09
+Date: 2026-06-13
 
 Status: Active Reference
 
@@ -8,7 +8,7 @@ Status: Active Reference
 
 # Current Production System
 
-BrainCoach GPS OS V3
+BrainCoach GPS MVP-1 — bgs_core adapted
 
 Telegram
 → Tracker Entry
@@ -22,7 +22,7 @@ Operational Components:
 | --- | --- |
 | Telegram Tracker | Operational |
 | PostgreSQL | Connected |
-| n8n (BrainCoach GPS OS V3) | Production |
+| n8n (BrainCoach GPS MVP-1 — bgs_core adapted) | Production |
 | Observation Layer | Operational |
 | Signal Extraction Layer | Operational |
 | research_signal_candidates | Receiving live data |
@@ -412,11 +412,15 @@ Documents:
 
 BrainCoach GPS OS
 
-Version: V3
+Version: MVP-1 bgs_core adapted
 
 Status: Production
 
 Export:
+
+BrainCoach GPS MVP-1 — bgs_core adapted.json
+
+Supersedes:
 
 BrainCoach GPS OS — Stage 3 Complete.json
 

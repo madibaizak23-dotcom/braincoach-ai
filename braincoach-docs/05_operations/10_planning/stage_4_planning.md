@@ -273,7 +273,7 @@ Development Data
 | Production intake pipeline | Stage 3 | Complete |
 | research_signal_candidates data | Stage 3 | Accumulating |
 | PostgreSQL schema documentation | Stage 3 | Current |
-| BrainCoach GPS OS V3 | Stage 3 | Production |
+| BrainCoach GPS MVP-1 — bgs_core adapted | GPS MVP-1 workflow migration | Production |
 | Signal Dictionary v1.0 | Milestone 3 | Available |
 | Vertex AI credentials | Infrastructure | To be configured |
 

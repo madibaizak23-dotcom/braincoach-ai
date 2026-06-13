@@ -28,7 +28,7 @@ Actual Stage 3 delivery:
 - Observation Layer operational
 - Signal Extraction Layer operational
 - `research_signal_candidates` staging table populated from live workflow
-- BrainCoach GPS OS V3 deployed as the current production workflow
+- BrainCoach GPS OS V3 deployed as the Stage 3 production workflow
 
 This re-scoping was intentional. The system needed a working path from raw input to structured research objects before graph construction could produce meaningful edges.
 
@@ -42,7 +42,7 @@ This re-scoping was intentional. The system needed a working path from raw input
 | --- | --- |
 | Telegram Tracker | Operational |
 | PostgreSQL | Connected |
-| n8n workflow (BrainCoach GPS OS V3) | Production |
+| n8n workflow (BrainCoach GPS OS V3) | Superseded by `BrainCoach GPS MVP-1 — bgs_core adapted` on 2026-06-13 |
 | Observation Layer | Operational |
 | Signal Extraction Layer | Operational |
 | `research_signal_candidates` | Receiving live data |
@@ -66,9 +66,13 @@ PostgreSQL persistence
 - `self_initiation`
 - `dependence_external`
 
-### Production Workflow Export
+### Stage 3 Workflow Export
 
 - `braincoach-docs/07_automation/03_n8n/BrainCoach GPS OS — Stage 3 Complete.json`
+
+Superseded 2026-06-13 by:
+
+- `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
 
 ---
 
@@ -78,7 +82,7 @@ PostgreSQL persistence
 
 2. **Incremental workflow evolution.** The existing Tracker MVP was extended with `OBS_CreateObservation`, `SIG_ExtractSignalCandidate`, `SIG_ParseCandidate`, `SIG_HasCandidate`, and `DB_SaveSignalCandidate` without redesigning the intake path.
 
-3. **BrainCoach GPS OS V3 as production baseline.** V3 is the authoritative working version. Earlier exports remain as historical references.
+3. **BrainCoach GPS OS V3 as Stage 3 baseline.** V3 was the authoritative working version for Stage 3 and was superseded by the BGS Core GPS MVP-1 adapted workflow on 2026-06-13.
 
 4. **No architectural changes for classification noise.** Research notes and parent reflections can be misclassified as behavioral signals. This is tracked for Signal Taxonomy v2, not fixed in Stage 3.
 

@@ -176,3 +176,66 @@ Session Outcome:
 Status:
 
 SUCCESS
+
+---
+
+## MILESTONE-007
+
+Title:
+
+BrainCoach GPS Workflow Migrated To BGS Core GPS MVP-1
+
+Date:
+
+2026-06-13
+
+Completed:
+
+* `BrainCoach GPS MVP-1 — bgs_core adapted.json` imported into n8n
+* Owner added required tokens/credentials after import
+* Workflow confirmed operational by owner
+* Stage 3 workflow logic preserved and PostgreSQL layer adapted to live `bgs_core`
+* Legacy export `BrainCoach GPS OS — Stage 3 Complete.json` removed from repository to avoid duplicated source-of-truth workflow exports
+* Migration diff-report stored next to the adapted workflow export
+
+Current Export:
+
+`braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
+
+Report:
+
+`braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
+
+Status:
+
+SUCCESS
+
+---
+
+## MILESTONE-008
+
+Title:
+
+BGS Orchestration Knowledge Tables Confirmed
+
+Date:
+
+2026-06-13
+
+Completed:
+
+* Owner executed `CREATE EXTENSION IF NOT EXISTS "pgcrypto"` in `bgs_orch`
+* `knowledge_events` table created in `bgs_orch`
+* `knowledge_assets` table confirmed existing in `bgs_orch`
+* PostgreSQL returned `relation "knowledge_assets" already exists, skipping`
+* Repository runtime inventory updated to include `knowledge_events` and `knowledge_assets`
+
+Safety:
+
+* SQL was executed manually by owner
+* Codex did not run database commands
+* Existing `knowledge_assets` table was not dropped or recreated
+
+Status:
+
+SUCCESS

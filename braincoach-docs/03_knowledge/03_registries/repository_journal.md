@@ -205,6 +205,75 @@ BGS Architecture Foundation Established
 
 ---
 
+## RJ-004
+
+### date
+
+2026-06-13
+
+### type
+
+runtime
+
+### title
+
+BrainCoach GPS Workflow Migrated To BGS Core GPS MVP-1
+
+### summary
+
+The Stage 3 BrainCoach GPS OS workflow was migrated to `BrainCoach GPS MVP-1 — bgs_core adapted.json`, imported into n8n, configured with required tokens by the owner, and confirmed operational.
+
+### impact
+
+The current workflow source of truth now uses the live `bgs_core` GPS MVP-1 persistence model. The legacy `BrainCoach GPS OS — Stage 3 Complete.json` export was removed from the repository to avoid duplicate production workflow exports.
+
+### related_assets
+
+* braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json
+* braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md
+* braincoach-docs/07_automation/02_workflows/tracker_capture_v1.md
+
+### related_decisions
+
+* DEC-014-bgs-core-mvp-v1.md
+
+---
+
+## RJ-005
+
+### date
+
+2026-06-13
+
+### type
+
+runtime
+
+### title
+
+BGS Orchestration Knowledge Tables Confirmed
+
+### summary
+
+The owner executed the `bgs_orch` SQL foundation for Knowledge OS repository synchronization. `knowledge_events` was created, and `knowledge_assets` was confirmed as already existing.
+
+### impact
+
+The Orchestration Layer now has confirmed persistence for repository event tracking and Knowledge Object asset registry synchronization. This supports future automated repository monitoring and Knowledge OS sync workflows.
+
+### related_assets
+
+* braincoach-docs/05_operations/13_runtime/03_inventory.md
+* braincoach-docs/07_automation/03_n8n/knowledge_registry_sync_v1.json
+* braincoach-docs/07_automation/06_storage_architecture.md
+
+### related_decisions
+
+* DEC-011-source-of-truth-model.md
+* DEC-013-orchestration-runtime-strategy.md
+
+---
+
 # journal_management
 
 Основным владельцем журнала является:

@@ -173,6 +173,62 @@ Persistent record of repository evolution.
 
 ---
 
+### knowledge_events
+
+Status:
+
+Operational
+
+Purpose:
+
+Repository change event stream for Knowledge OS synchronization.
+
+Live confirmation:
+
+Created in `bgs_orch` by owner on 2026-06-13.
+
+Key fields:
+
+* `id`
+* `event_type`
+* `repository`
+* `branch`
+* `commit_id`
+* `event_timestamp`
+* `object_type`
+* `metadata`
+* `created_at`
+
+---
+
+### knowledge_assets
+
+Status:
+
+Operational
+
+Purpose:
+
+Authoritative registry of repository Knowledge Objects and tracked assets.
+
+Live confirmation:
+
+`CREATE TABLE IF NOT EXISTS` was run by owner on 2026-06-13. PostgreSQL returned `relation "knowledge_assets" already exists, skipping`, confirming the table already existed in `bgs_orch`.
+
+Key fields:
+
+* `id`
+* `object_type`
+* `object_name`
+* `object_path`
+* `version`
+* `status`
+* `first_seen`
+* `last_updated`
+* `metadata`
+
+---
+
 ### agent_registry
 
 Status:

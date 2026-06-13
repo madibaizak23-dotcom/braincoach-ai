@@ -8,6 +8,102 @@ Chronological record of major architectural decisions, milestones, discoveries, 
 
 ---
 
+## 2026-06-13
+
+### BGS Orchestration Knowledge Tables Confirmed
+
+Status: Completed
+
+Objective:
+
+Confirm the live `bgs_orch` persistence tables needed for Knowledge OS repository event tracking and asset registry synchronization.
+
+Applied Manually In `bgs_orch` By Owner:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS knowledge_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    branch TEXT NOT NULL,
+    commit_id TEXT NOT NULL,
+    event_timestamp TIMESTAMPTZ,
+    object_type TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_assets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    object_type TEXT NOT NULL,
+    object_name TEXT NOT NULL,
+    object_path TEXT NOT NULL UNIQUE,
+    version TEXT DEFAULT 'v1',
+    status TEXT DEFAULT 'active',
+    first_seen TIMESTAMPTZ DEFAULT NOW(),
+    last_updated TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB
+);
+```
+
+Live Result:
+
+* `pgcrypto` extension confirmed.
+* `knowledge_events` table created.
+* `knowledge_assets` already existed; PostgreSQL returned `relation "knowledge_assets" already exists, skipping`.
+
+Safety Confirmation:
+
+* SQL was executed manually by owner, not by Codex.
+* `knowledge_assets` was not recreated or dropped.
+* No existing data deletion was reported.
+
+Repository Documentation Updated:
+
+* `braincoach-docs/05_operations/13_runtime/03_inventory.md`
+* `braincoach-docs/05_operations/12_reviews/bgs_milestone_log.md`
+* `braincoach-docs/03_knowledge/03_registries/repository_journal.md`
+
+---
+
+## 2026-06-13
+
+### BrainCoach GPS Workflow Migration Completed
+
+Status: Completed
+
+Objective:
+
+Migrate the Stage 3 BrainCoach GPS OS workflow export to the live `bgs_core` GPS MVP-1 persistence model without rebuilding the workflow from scratch.
+
+Completed:
+
+* `BrainCoach GPS MVP-1 — bgs_core adapted.json` imported successfully into n8n.
+* Required Telegram and voice intake flow preserved.
+* Conversation Engine preserved through `conversations` and `messages`.
+* PostgreSQL layer migrated from old Stage 3 fields to live `bgs_core` tables.
+* Token/credential configuration completed by owner after import.
+* Workflow execution confirmed operational by owner.
+* Legacy export `BrainCoach GPS OS — Stage 3 Complete.json` removed from repository to avoid duplication.
+
+Current Workflow Export:
+
+* `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
+
+Migration Report:
+
+* `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
+
+Safety Confirmation:
+
+* No database migration was run by Codex.
+* No new tables were created by this workflow adaptation.
+* Existing Conversation Engine architecture was not removed.
+
+---
+
 ## 2026-06-12
 
 ### GPS MVP-1 Reality Tracker Migration Applied
@@ -218,7 +314,7 @@ Implemented:
 * Observation Layer operational (`observations` populated from tracker entries)
 * Signal Extraction Layer operational (`SIG_*` nodes in BrainCoach GPS OS V3)
 * `research_signal_candidates` receiving live data
-* BrainCoach GPS OS V3 deployed as current production workflow
+* BrainCoach GPS OS V3 deployed as the Stage 3 production workflow; superseded by `BrainCoach GPS MVP-1 — bgs_core adapted` on 2026-06-13
 
 Validated Pipeline:
 

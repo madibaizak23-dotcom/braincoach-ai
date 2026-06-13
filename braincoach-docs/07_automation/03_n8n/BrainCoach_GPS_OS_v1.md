@@ -20,11 +20,13 @@ BrainCoach GPS OS — персональная Knowledge OS для фиксац�
 
 ## Версия
 
-Version: V3
+Version: MVP-1 bgs_core adapted
 
 State: Production
 
-Export: `BrainCoach GPS OS — Stage 3 Complete.json`
+Export: `BrainCoach GPS MVP-1 — bgs_core adapted.json`
+
+Supersedes: `BrainCoach GPS OS — Stage 3 Complete.json`
 
 Previous versions:
 
@@ -388,7 +390,8 @@ Planned (Stage 4):
 ## Documentation References
 
 * Workflow spec: `braincoach-docs/07_automation/02_workflows/tracker_capture_v1.md`
-* Production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS OS — Stage 3 Complete.json`
+* Production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
+* Migration report: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
 * Signal candidates table: `braincoach-docs/07_automation/04_postgres/research_signal_candidates.md`
 * Stage 3 report: `braincoach-docs/05_operations/reviews/stage_3_completion_report.md`
 * Stage 4 plan: `braincoach-docs/05_operations/planning/stage_4_planning.md`

@@ -437,7 +437,20 @@ Stage 3 completed 2026-06-09.
 
 Signal candidate extraction is operational in BrainCoach GPS OS V3.
 
-Production export: `BrainCoach GPS OS — Stage 3 Complete.json`
+Former production export: `BrainCoach GPS OS — Stage 3 Complete.json`
+
+Migration status: completed 2026-06-13.
+
+Current production export: `BrainCoach GPS MVP-1 — bgs_core adapted.json`
+
+Migration report: `BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
+
+Notes:
+
+- The Stage 3 workflow was not rebuilt from scratch.
+- The Telegram trigger, voice transcription, routing, tracker extraction, signal candidate extraction, replies, `/start`, `/help`, and `/recent` paths were preserved.
+- The PostgreSQL layer now uses live `bgs_core` tables: `persons`, `trajectories`, `tracker_entries`, `observations`, `research_signal_candidates`, `activity_events`, and `trajectory_entries`.
+- The legacy Stage 3 export was removed from `03_n8n` after successful import and owner confirmation to prevent workflow duplication.
 
 First validated signal categories: `self_initiation`, `dependence_external`
 

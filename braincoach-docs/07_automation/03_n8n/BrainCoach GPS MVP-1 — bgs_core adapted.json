@@ -1,12 +1,12 @@
 {
-  "name": "BrainCoach GPS OS — Stage 3 Complete",
+  "name": "BrainCoach GPS MVP-1 — bgs_core adapted",
   "nodes": [
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $('SYS_BuildInputContext').first().json.text }}",
         "options": {
-          "systemMessage": "You are a helpful assistantТы Tracker Extractor.\n\nТвоя задача классифицировать запись пользователя.\n\nВерни JSON строго в формате:\n\n{\n\"entry_type\": \"note\",\n\"tags\": [],\n\"summary\": \"\"\n}\n\nРазрешенные entry_type:\n\nnote\nidea\ninsight\ndecision\nobservation\nhypothesis\ntask\n\nПравила:\n\n* tags максимум 5\n* tags только lowercase\n* summary максимум 20 слов\n* используй только текст пользователя\n* не придумывай факты\n\nВозвращай только JSON.\n"
+          "systemMessage": "You are Tracker Extractor for BrainCoach GPS MVP-1.\n\nClassify the user's tracker input. Return strict JSON only:\n\n{\n  \"entry_type\": \"note\",\n  \"tags\": [],\n  \"summary\": \"\"\n}\n\nAllowed entry_type values:\nnote\nobservation\ninsight\nfeeling\nidea\ndecision\nhypothesis\ntask\n\nRules:\n- Short activity facts like \"английский 60\", \"лед 60\", \"дриблинг 30\" may be classified as \"note\"; deterministic parsing happens later.\n- Use \"observation\" for factual behavior/state observations.\n- Use \"insight\" for conclusions or learning.\n- Use \"feeling\" for emotional/body state notes.\n- tags maximum 5, lowercase only.\n- summary maximum 20 words.\n- Use only the user's text.\n- Do not invent facts.\n\nReturn JSON only."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -47,7 +47,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO tracker_entries (\n    telegram_user_id,\n    content,\n    entry_type\n)\nVALUES (\n    {{$node[\"TG_Trigger\"].json.message.from.id}},\n    '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n    '{{$json.entry_type}}'\n)\nRETURNING\n    id,\n    telegram_user_id,\n    entry_type;",
+        "query": "WITH saved_entry AS (\n  INSERT INTO tracker_entries (\n    person_id,\n    content,\n    entry_type\n  )\n  VALUES (\n    '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid,\n    '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n    '{{$json.entry_type}}'\n  )\n  RETURNING\n    entry_id,\n    person_id,\n    entry_type,\n    content,\n    created_at\n),\nsaved_activity AS (\n  INSERT INTO activity_events (\n    trajectory_id,\n    person_id,\n    activity_type_code,\n    duration_minutes,\n    status,\n    notes,\n    source,\n    created_by_person_id,\n    created_at\n  )\n  SELECT\n    '{{ $(\"SYS_BuildInputContext\").first().json.trajectory_id }}'::uuid,\n    se.person_id,\n    '{{$json.activity_type_code}}',\n    {{$json.duration_minutes || 'NULL'}},\n    'completed',\n    se.content,\n    'telegram_bot',\n    se.person_id,\n    NOW()\n  FROM saved_entry se\n  WHERE {{$json.is_activity_event ? 'TRUE' : 'FALSE'}}\n  RETURNING activity_event_id\n),\nsaved_trajectory_entry AS (\n  INSERT INTO trajectory_entries (\n    trajectory_id,\n    person_id,\n    tracker_entry_id,\n    entry_type,\n    content,\n    source,\n    created_by_person_id,\n    created_at\n  )\n  SELECT\n    '{{ $(\"SYS_BuildInputContext\").first().json.trajectory_id }}'::uuid,\n    se.person_id,\n    se.entry_id,\n    '{{$json.trajectory_entry_type || \"general_note\"}}',\n    se.content,\n    'telegram_bot',\n    se.person_id,\n    NOW()\n  FROM saved_entry se\n  WHERE NOT {{$json.is_activity_event ? 'TRUE' : 'FALSE'}}\n  RETURNING entry_id AS trajectory_entry_id\n)\nSELECT\n  se.entry_id,\n  se.entry_id AS id,\n  se.person_id,\n  se.entry_type,\n  se.content,\n  (SELECT activity_event_id FROM saved_activity LIMIT 1) AS activity_event_id,\n  (SELECT trajectory_entry_id FROM saved_trajectory_entry LIMIT 1) AS trajectory_entry_id\nFROM saved_entry se;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COUNT(*) as total\nFROM tracker_entries\nWHERE telegram_user_id =\n{{$node[\"TG_Trigger\"].json.message.from.id}};",
+        "query": "SELECT COUNT(*) as total\nFROM tracker_entries\nWHERE person_id = '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -145,7 +145,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO messages (\n  telegram_user_id,\n  role,\n  content,\n  created_at\n)\nVALUES (\n  '{{ $node[\"TG_Trigger\"].json.message.from.id }}',\n  'user',\n  '{{ ($json.text || \"\").replace(/'/g,\"''\") }}',\n  NOW()\n);",
+        "query": "INSERT INTO messages (\n  conversation_id,\n  role,\n  content,\n  created_at\n)\nVALUES (\n  '{{ $(\"SYS_BuildInputContext\").first().json.conversation_id }}'::uuid,\n  'user',\n  '{{ ($json.text || \"\").replace(/'/g,\"''\") }}',\n  NOW()\n)\nRETURNING message_id;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -165,7 +165,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let raw = $input.first().json.output || \"\";\n\nraw = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\ntry {\n  return [{\n    json: JSON.parse(raw)\n  }];\n} catch (e) {\n  return [{\n    json: {\n      entry_type: \"note\",\n      tags: [],\n      summary: \"parse fallback\",\n      error: e.message\n    }\n  }];\n}"
+        "jsCode": "let raw = $input.first().json.output || \"\";\n\nraw = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = {\n    entry_type: \"note\",\n    tags: [],\n    summary: \"parse fallback\",\n    error: e.message\n  };\n}\n\nconst sourceText = ($('SYS_BuildInputContext').first().json.text || \"\").trim();\nconst lower = sourceText.toLowerCase();\nconst activityMap = [\n  { pattern: /^(английский|english)\\s+(\\d{1,3})\\b/i, code: \"english\" },\n  { pattern: /^(лед|лёд|ice)\\s+(\\d{1,3})\\b/i, code: \"ice\" },\n  { pattern: /^(дриблинг|dribbling|dribble)\\s+(\\d{1,3})\\b/i, code: \"dribbling\" }\n];\n\nlet activity = null;\nfor (const item of activityMap) {\n  const match = lower.match(item.pattern);\n  if (match) {\n    activity = {\n      activity_type_code: item.code,\n      duration_minutes: Number(match[2])\n    };\n    break;\n  }\n}\n\nconst allowedTrackerTypes = new Set([\n  \"note\",\n  \"idea\",\n  \"insight\",\n  \"decision\",\n  \"observation\",\n  \"hypothesis\",\n  \"task\",\n  \"feeling\"\n]);\n\nif (!allowedTrackerTypes.has(parsed.entry_type)) {\n  parsed.entry_type = \"note\";\n}\n\nconst trajectoryTypeMap = {\n  note: \"general_note\",\n  idea: \"general_note\",\n  decision: \"general_note\",\n  hypothesis: \"general_note\",\n  task: \"general_note\",\n  observation: \"observation\",\n  insight: \"insight\",\n  feeling: \"feeling\"\n};\n\nreturn [{\n  json: {\n    ...parsed,\n    is_activity_event: Boolean(activity),\n    activity_type_code: activity?.activity_type_code || null,\n    duration_minutes: activity?.duration_minutes || null,\n    trajectory_entry_type: trajectoryTypeMap[parsed.entry_type] || \"general_note\"\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -212,7 +212,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n    id,\n    entry_type,\n    content\nFROM tracker_entries\nWHERE telegram_user_id =\n{{ $('TG_Trigger').item.json.message.from.id }}\nAND content NOT LIKE '/%'\nORDER BY created_at DESC\nLIMIT 5;",
+        "query": "SELECT\n  entry_id,\n  entry_id AS id,\n  entry_type,\n  content\nFROM tracker_entries\nWHERE person_id = '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid\n  AND content NOT LIKE '/%'\nORDER BY created_at DESC\nLIMIT 5;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -305,8 +305,8 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH upserted_client AS (\nINSERT INTO clients (\ntelegram_user_id,\nfirst_name,\nusername,\ncurrent_stage,\nlast_message_at,\nupdated_at\n)\nVALUES (\n'{{ $node[\"TG_Trigger\"].json.message.from.id }}',\n'{{ ($node[\"TG_Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n'{{ ($node[\"TG_Trigger\"].json.message.from.username || \"\").replace(/'/g, \"''\") }}',\n'tracking',\nNOW(),\nNOW()\n)\nON CONFLICT (telegram_user_id)\nDO UPDATE SET\nusername = EXCLUDED.username,\nlast_message_at = NOW(),\nupdated_at = NOW()\nRETURNING *\n),\n\nensured_state AS (\nINSERT INTO conversation_state (\ntelegram_user_id,\nsub_stage,\npattern_type,\nqualification_signals\n)\nVALUES (\n'{{ $node[\"TG_Trigger\"].json.message.from.id }}',\n'capture',\nNULL,\n'{}'::jsonb\n)\nON CONFLICT (telegram_user_id)\nDO UPDATE SET\nupdated_at = NOW()\nRETURNING *\n)\n\nSELECT\nuc.current_stage,\nuc.allow_reminders,\nes.sub_stage,\nes.pattern_type,\nes.qualification_signals\nFROM upserted_client uc\nJOIN ensured_state es\nON es.telegram_user_id = uc.telegram_user_id;\n",
-        "additionalFields": {}
+        "query": "WITH existing_person AS (\n  SELECT person_id\n  FROM persons\n  WHERE source = 'telegram'\n    AND external_id = '{{ $node[\"TG_Trigger\"].json.message.from.id }}'\n  ORDER BY created_at ASC\n  LIMIT 1\n),\ninserted_person AS (\n  INSERT INTO persons (\n    external_id,\n    source,\n    role,\n    first_name,\n    status,\n    created_at,\n    updated_at\n  )\n  SELECT\n    '{{ $node[\"TG_Trigger\"].json.message.from.id }}',\n    'telegram',\n    'athlete',\n    '{{ ($node[\"TG_Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n    'active',\n    NOW(),\n    NOW()\n  WHERE NOT EXISTS (SELECT 1 FROM existing_person)\n  RETURNING person_id\n),\nperson_row AS (\n  SELECT person_id FROM existing_person\n  UNION ALL\n  SELECT person_id FROM inserted_person\n  LIMIT 1\n),\nupdated_person AS (\n  UPDATE persons p\n  SET\n    first_name = COALESCE(NULLIF('{{ ($node[\"TG_Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}', ''), p.first_name),\n    role = COALESCE(NULLIF(p.role, ''), 'athlete'),\n    updated_at = NOW()\n  FROM person_row pr\n  WHERE p.person_id = pr.person_id\n  RETURNING p.person_id\n),\nexisting_conversation AS (\n  SELECT conversation_id\n  FROM conversations\n  WHERE person_id = (SELECT person_id FROM person_row)\n    AND channel = 'telegram'\n    AND status = 'active'\n  ORDER BY started_at DESC\n  LIMIT 1\n),\ninserted_conversation AS (\n  INSERT INTO conversations (person_id, channel, status, started_at)\n  SELECT person_id, 'telegram', 'active', NOW()\n  FROM person_row\n  WHERE NOT EXISTS (SELECT 1 FROM existing_conversation)\n  RETURNING conversation_id\n),\nconversation_row AS (\n  SELECT conversation_id FROM existing_conversation\n  UNION ALL\n  SELECT conversation_id FROM inserted_conversation\n  LIMIT 1\n),\nexisting_trajectory AS (\n  SELECT trajectory_id\n  FROM trajectories\n  WHERE person_id = (SELECT person_id FROM person_row)\n    AND status = 'active'\n  ORDER BY created_at ASC\n  LIMIT 1\n),\ninserted_trajectory AS (\n  INSERT INTO trajectories (\n    person_id,\n    domain_code,\n    title,\n    status,\n    created_at,\n    updated_at\n  )\n  SELECT\n    person_id,\n    'sport',\n    'Telegram GPS Tracker',\n    'active',\n    NOW(),\n    NOW()\n  FROM person_row\n  WHERE NOT EXISTS (SELECT 1 FROM existing_trajectory)\n  RETURNING trajectory_id\n),\ntrajectory_row AS (\n  SELECT trajectory_id FROM existing_trajectory\n  UNION ALL\n  SELECT trajectory_id FROM inserted_trajectory\n  LIMIT 1\n)\nSELECT\n  (SELECT person_id FROM person_row) AS person_id,\n  (SELECT conversation_id FROM conversation_row) AS conversation_id,\n  (SELECT trajectory_id FROM trajectory_row) AS trajectory_id,\n  'tracking' AS current_stage,\n  TRUE AS allow_reminders,\n  'capture' AS sub_stage,\n  NULL::text AS pattern_type,\n  '{}'::jsonb AS qualification_signals;",
+        "options": {}
       },
       "name": "SYS_LoadContext",
       "type": "n8n-nodes-base.postgres",
@@ -349,7 +349,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const text = $json.text || \"\";\n\nif (!text) {\n  throw new Error(\"No text available\");\n}\n\nif (text.startsWith(\"/\")) {\n  return [{\n    json: {\n      route: \"command\",\n      text\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    route: \"tracker\",\n    text\n  }\n}];"
+        "jsCode": "const rawText = $json.text || \"\";\nconst text = rawText.trim();\n\nif (!text) {\n  throw new Error(\"No text available\");\n}\n\nif (text.startsWith(\"/\")) {\n  return [{\n    json: {\n      route: \"command\",\n      text: text.startsWith(\"/help\") ? \"/start\" : text\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    route: \"tracker\",\n    text\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -362,7 +362,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let voiceText = \"\";\n\ntry {\n  voiceText = $('VOI_NormalizeTranscript').first().json.text;\n} catch (e) {\n  voiceText = \"\";\n}\n\nconst telegramText =\n  $('TG_Trigger').first()?.json?.message?.text || \"\";\n\nreturn [{\n  json: {\n    text: voiceText || telegramText,\n    current_stage: $json.current_stage,\n    sub_stage: $json.sub_stage,\n    pattern_type: $json.pattern_type,\n    allow_reminders: $json.allow_reminders\n  }\n}];"
+        "jsCode": "let voiceText = \"\";\n\ntry {\n  voiceText = $('VOI_NormalizeTranscript').first().json.text;\n} catch (e) {\n  voiceText = \"\";\n}\n\nconst telegramText =\n  $('TG_Trigger').first()?.json?.message?.text || \"\";\n\nreturn [{\n  json: {\n    text: voiceText || telegramText,\n    person_id: $json.person_id,\n    conversation_id: $json.conversation_id,\n    trajectory_id: $json.trajectory_id,\n    current_stage: $json.current_stage,\n    sub_stage: $json.sub_stage,\n    pattern_type: $json.pattern_type,\n    allow_reminders: $json.allow_reminders\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -389,7 +389,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO observations (\n    telegram_user_id,\n    observation_text,\n    source_entry_id,\n    current_state\n)\nVALUES (\n    {{$node[\"TG_Trigger\"].json.message.from.id}},\n    '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n    '{{$node[\"TRK_SaveEntry\"].json.id}}',\n    'captured'\n)\nRETURNING id;",
+        "query": "INSERT INTO observations (\n  person_id,\n  source_type,\n  observation_text,\n  confidence,\n  created_at\n)\nVALUES (\n  '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid,\n  'telegram_tracker',\n  '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n  NULL,\n  NOW()\n)\nRETURNING\n  observation_id,\n  observation_id AS id;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -476,9 +476,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO research_signal_candidates (\n    telegram_user_id,\n    source_observation_id,\n    source_entry_id,\n    signal_text,\n    signal_type,\n    confidence,\n    evidence,\n    status,\n    metadata\n)\nVALUES (\n    $1,\n    $2::uuid,\n    $3::uuid,\n    $4,\n    $5,\n    $6::numeric,\n    $7,\n    'candidate',\n    $8::jsonb\n)\nRETURNING id;",
+        "query": "INSERT INTO research_signal_candidates (\n  observation_id,\n  signal_name,\n  confidence,\n  status,\n  created_at\n)\nVALUES (\n  $1::uuid,\n  $2,\n  $3::numeric,\n  'candidate',\n  NOW()\n)\nRETURNING candidate_id;",
         "options": {
-          "queryReplacement": "={{\n[\n$('TG_Trigger').first().json.message.from.id,\n$('OBS_CreateObservation').first().json.id,\n$('TRK_SaveEntry').first().json.id,\n$json.signal_text || \"\",\n$json.signal_type || \"unknown\",\nNumber($json.confidence),\n$json.evidence || \"\",\nJSON.stringify($json)\n]\n}}"
+          "queryReplacement": "={{\n[\n$('OBS_CreateObservation').first().json.observation_id,\n$json.signal_text || $json.signal_type || \"unknown\",\nNumber($json.confidence || 0)\n]\n}}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -579,7 +579,7 @@
     {
       "parameters": {
         "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
-        "text": "=BrainCoach GPS помогает замечать важные сигналы развития подростка раньше, чем они становятся проблемой или результатом.\n\nВы можете сохранять наблюдения о спорте, учебе, дисциплине, самостоятельности и развитии ребенка.\n\n🎙 Отправьте голосовое сообщение\n\nили\n\n✍️ Напишите текстом\n\nЧто сейчас беспокоит вас больше всего как родителя?\n\nНапример:\n\n«На тренировку идет сам, а уроки без напоминаний не начинает»\n\n«После тренера всё делает, самостоятельно — редко»\n\n«Потенциал высокий, но результаты нестабильны»",
+        "text": "=BrainCoach GPS MVP-1 принимает короткие записи текстом или голосом.\n\nМожно просто писать или говорить:\n- план\n- факт\n- наблюдение\n- мысль\n- инсайт\n\nПримеры фактов:\nанглийский 60\nлед 60\nдриблинг 30\n\nМинимальные команды:\n/start\n/help\n/recent",
         "additionalFields": {
           "appendAttribution": false,
           "disable_notification": false
@@ -934,7 +934,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
