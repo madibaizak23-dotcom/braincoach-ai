@@ -831,6 +831,77 @@ BrainCoach now has a daily intelligence object between raw observations and week
 
 ---
 
+## RJ-022
+
+### date
+
+2026-06-14
+
+### type
+
+architecture
+
+### title
+
+Daily Intelligence Report Generator v1 Drafted
+
+### summary
+
+Created the draft Production OS design specification for Daily Intelligence Report Generator v1 as the intelligence architecture layer that may later turn live tracker, observation, signal candidate, interview, and conversation data into Daily Intelligence Report drafts.
+
+### impact
+
+BrainCoach now has a design bridge between live signal accumulation and the Daily Intelligence Report output artifact. The spec defines source contracts, daily read model, aggregation logic, signal-of-the-day selection, emerging pattern detection, bottleneck detection, research direction derivation, output schema, and governance boundaries without approving SQL, migrations, n8n workflow, or production automation.
+
+### related_assets
+
+* braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_generator_v1.md
+* braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_v1.md
+* braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md
+* braincoach-docs/07_automation/production_os/README.md
+
+### related_decisions
+
+* DEC-016-bgs-database-boundary-core-vs-orch.md
+* DEC-017-bgs-orch-schema-segregation.md
+
+---
+
+## RJ-023
+
+### date
+
+2026-06-14
+
+### type
+
+architecture
+
+### title
+
+Daily Intelligence Report Generator Placement Confirmed
+
+### summary
+
+Recorded the placement decision that Daily Intelligence Report Generator v1 belongs in Production OS `05_intelligence/` while it remains an intelligence architecture specification rather than a workflow implementation.
+
+### impact
+
+BrainCoach now has an explicit boundary between the intelligence design artifact and any future workflow design. The generator spec stays close to the Daily Intelligence Report output artifact and does not define execution mechanics, n8n nodes, schedules, credentials, workflow JSON, runtime deployment, SQL, or migrations.
+
+### related_assets
+
+* braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_generator_v1.md
+* braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_v1.md
+* braincoach-docs/07_automation/production_os/README.md
+
+### related_decisions
+
+* DEC-016-bgs-database-boundary-core-vs-orch.md
+* DEC-017-bgs-orch-schema-segregation.md
+
+---
+
 # journal_management
 
 Основным владельцем журнала является:

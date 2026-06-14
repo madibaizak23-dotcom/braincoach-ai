@@ -30,6 +30,10 @@ It does not create an automated workflow.
 
 It does not modify production workflow.
 
+Related generator design:
+
+`braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_generator_v1.md`
+
 ## Definition
 
 BrainCoach Daily Intelligence Report is a daily draft/spec artifact that captures the state of the Production OS intelligence loop.
