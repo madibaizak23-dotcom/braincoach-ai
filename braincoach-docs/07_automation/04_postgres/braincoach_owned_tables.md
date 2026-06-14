@@ -1,8 +1,8 @@
 # BrainCoach Owned Tables
 
 Status: Active DBA Rule
-Last Updated: 2026-06-12
-Database: `braincoach_dev`, `bgs_core`
+Last Updated: 2026-06-14
+Database: `braincoach_dev` legacy snapshot, `bgs_core`, `bgs_orch`
 Schema: `public`
 
 ## Purpose
@@ -22,6 +22,21 @@ BrainCoach documentation should list BrainCoach-owned tables separately from n8n
 Migration governance:
 
 All PostgreSQL migrations must follow `braincoach-docs/07_automation/04_postgres/migration_governance_rule_v1.md`.
+
+Scope note:
+
+This document started as a `braincoach_dev` ownership inventory and now also tracks confirmed BGS-owned tables in `bgs_core` and `bgs_orch`. Database ownership should be explicit for new sections.
+
+Schema segregation rule:
+
+`DEC-017 BGS Orch Schema Segregation` requires new BrainCoach-owned `bgs_orch` tables to be created outside `public`, in separate schemas:
+
+* `knowledge.*`
+* `research.*`
+* `production.*`
+* `agent.*`
+
+Existing BrainCoach-owned `bgs_orch.public` tables remain in place until a separate approved migration moves them.
 
 ## BrainCoach-Owned Tables
 
@@ -71,6 +86,39 @@ Live seed confirmation:
 | `trajectory_domains` | 7 | 2026-06-12 |
 | `activity_types` | 11 | 2026-06-12 |
 
+## BGS Orch-Owned Tables
+
+Current BrainCoach-owned `bgs_orch` tables confirmed live on 2026-06-13/2026-06-14: 3
+
+Full `bgs_orch.public` table inventory:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PUBLIC_TABLES_2026_06_14.md`
+
+Schema confirmation:
+
+`bgs_orch` currently has no custom domain schemas. Owner-provided schema list on 2026-06-14:
+
+| schema | role |
+| --- | --- |
+| `public` | active application/runtime schema |
+| `information_schema` | PostgreSQL system schema |
+| `pg_catalog` | PostgreSQL system schema |
+| `pg_toast` | PostgreSQL system schema |
+
+| table | ownership | role |
+| --- | --- | --- |
+| `knowledge_events` | BrainCoach / BGS Orch | repository event stream for Knowledge OS synchronization |
+| `knowledge_assets` | BrainCoach / BGS Orch | live registry of repository Knowledge Assets by `source_path` |
+| `repository_journal` | BrainCoach / BGS Orch | persistent repository evolution journal |
+
+Future BrainCoach-owned tables must not be added to `bgs_orch.public` without a new accepted decision overriding DEC-017.
+
+Live registry confirmation:
+
+| table | key | confirmed asset examples | date |
+| --- | --- | --- | --- |
+| `knowledge_assets` | `source_path` | `DEC-016 BGS Database Boundary: Core vs Orch`, `Research Schema v1 for bgs_orch` | 2026-06-14 |
+
 ## BrainCoach-Owned Views
 
 Current BrainCoach-owned views: 2
@@ -84,27 +132,29 @@ Current BrainCoach-owned views: 2
 
 n8n platform tables are not BrainCoach application tables.
 
-Examples observed in the same `public` schema:
+Examples observed in the same `public` schema include:
 
-- `workflow_entity`
-- `workflow_history`
-- `workflow_statistics`
-- `workflow_dependency`
-- `webhook_entity`
-- `credentials_entity`
-- `execution_entity`
-- `execution_data`
-- `execution_metadata`
-- `project`
-- `project_relation`
-- `user`
-- `tag_entity`
-- `variables`
 - `agents`
 - `agents_messages`
 - `agents_threads`
 - `agent_execution`
 - `agent_execution_threads`
+- `agent_registry`
+- `chat_hub_agents`
+- `chat_hub_messages`
+- `chat_hub_sessions`
+- `chat_hub_tools`
+- `credentials_entity`
+- `execution_entity`
+- `execution_data`
+- `execution_metadata`
+- `installed_nodes`
+- `installed_packages`
+- `instance_ai_messages`
+- `instance_ai_threads`
+- `migrations`
+- `oauth_clients`
+- `processed_data`
 
 These tables should be treated as n8n-owned runtime storage.
 

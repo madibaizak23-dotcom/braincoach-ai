@@ -179,6 +179,40 @@ SUCCESS
 
 ---
 
+## MILESTONE-009
+
+Title:
+
+Research Schema v1 Registered In BGS Orchestration Knowledge Assets
+
+Date:
+
+2026-06-14
+
+Completed:
+
+* Owner manually applied the reviewed `bgs_orch.knowledge_assets` upsert
+* `DEC-016 BGS Database Boundary: Core vs Orch` registered as `decision`
+* `Research Schema v1 for bgs_orch` registered as `architecture`
+* Both assets confirmed with `source_of_truth = 'github'`
+* Both assets confirmed with `status = 'active'`
+
+Verification:
+
+The owner ran a live `SELECT` against `bgs_orch.knowledge_assets`; query returned 2 rows matching the expected `source_path` values.
+
+Safety:
+
+* Codex did not run SQL against PostgreSQL
+* No database or table was created
+* This was a registry upsert into an existing live table
+
+Status:
+
+SUCCESS
+
+---
+
 ## MILESTONE-007
 
 Title:

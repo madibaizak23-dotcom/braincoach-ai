@@ -1,3 +1,84 @@
+## DEC-017 BGS Orch Schema Segregation
+
+Date: 2026-06-14
+
+Decision:
+
+New BrainCoach-owned objects in `bgs_orch` must be created in separate schemas, not in `public`.
+
+Proposed schemas:
+
+- `knowledge.*`
+- `research.*`
+- `production.*`
+- `agent.*`
+
+Boundary:
+
+- `public` remains for n8n/runtime and legacy public tables.
+- `knowledge.*` is for knowledge registry, knowledge events, and future knowledge process objects.
+- `research.*` is for seasons, briefs, reviews, and research execution memory.
+- `production.*` is for executions, outcomes, channel telemetry, and production process memory.
+- `agent.*` is for runs, evaluations, prompt versions, and agent performance history.
+
+Migration / Future Work:
+
+Existing `knowledge_assets`, `knowledge_events`, and `repository_journal` remain in `public` for now.
+
+Moving existing BrainCoach-owned public tables into `knowledge.*` requires a separate approved migration.
+
+`research.seasons` must not be created until a separate schema migration is reviewed and approved.
+
+Any future SQL must be draft-only until explicit approval.
+
+Status:
+
+Accepted
+
+Related:
+
+* DEC-013 Orchestration Runtime Strategy
+* DEC-016 BGS Database Boundary: Core vs Orch
+* BGS_ORCH_PUBLIC_TABLES_2026_06_14
+* Research Schema v1 for bgs_orch
+
+## DEC-016 BGS Database Boundary: Core vs Orch
+
+Date: 2026-06-14
+
+Decision:
+
+BrainCoach keeps the current two-database architecture:
+
+- `bgs_core` = human reality data
+- `bgs_orch` = knowledge, research process, production telemetry
+
+No new database is created at this stage.
+
+Boundary:
+
+`bgs_core` answers: what is happening with people?
+
+`bgs_orch` answers: how BrainCoach collects, processes, analyzes and turns reality into knowledge.
+
+Implementation:
+
+Season Research OS / Production OS objects belong in `bgs_orch`, preferably under `knowledge.*`, `research.*`, `production.*`, and `agent.*` schemas.
+
+Do not add season production telemetry, agent evaluation, or prompt-performance data to `bgs_core`.
+
+Status:
+
+Accepted
+
+Related:
+
+* DEC-008 BGS Data Architecture
+* DEC-011 Source Of Truth Model
+* DEC-013 Orchestration Runtime Strategy
+* DEC-014 BGS Core MVP v1
+* DEC-015 GPS Trajectory Research Placement
+
 ## DEC-015 GPS Trajectory Research Placement
 
 Date: 2026-06-12

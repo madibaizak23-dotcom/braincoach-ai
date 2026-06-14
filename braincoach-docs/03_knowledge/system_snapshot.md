@@ -364,6 +364,52 @@ Reality → Observation → Signal Candidate
 
 ---
 
+Production OS
+
+Status:
+
+Architected (Canon v1)
+
+Location:
+
+07_automation/production_os/
+
+Current Scope:
+
+Research Season
+↓
+Research Brief
+↓
+Marketing Brief
+↓
+Content Plan
+↓
+Production Execution
+↓
+Production Outcome
+↓
+Signal Capture
+↓
+Season Review
+↓
+Knowledge Update
+
+Implementation Status:
+
+Documentation and architecture complete.
+
+No schemas created.
+
+No tables created.
+
+No SQL approved.
+
+Purpose:
+
+Transform market interaction into knowledge candidates and knowledge updates.
+
+---
+
 Content Factory
 
 Status:
@@ -478,6 +524,71 @@ Reasoning (migration planned — Stage 4)
 
 ---
 
+# BGS Database Boundary
+
+Decision:
+
+DEC-016 BGS Database Boundary: Core vs Orch
+
+Status:
+
+Accepted
+
+Current boundary:
+
+* `bgs_core` = human reality data
+* `bgs_orch` = knowledge, research process, production telemetry
+
+No new database is created at this stage.
+
+Rule:
+
+* `bgs_core` answers: what is happening with people?
+* `bgs_orch` answers: how BrainCoach collects, processes, analyzes and turns reality into knowledge.
+
+Season Research OS / Production OS objects belong in `bgs_orch`, preferably under `knowledge.*`, `research.*`, `production.*`, and `agent.*` schemas.
+
+Do not add season production telemetry, agent evaluation, or prompt-performance data to `bgs_core`.
+
+---
+
+# BGS Orch Schema Governance
+
+Decision:
+
+DEC-017 BGS Orch Schema Segregation
+
+Status:
+
+Accepted
+
+Purpose:
+
+Prevent BrainCoach-owned objects from being mixed with n8n/runtime tables inside bgs_orch.public.
+
+Approved schema families:
+
+* knowledge.*
+* research.*
+* production.*
+* agent.*
+
+Current state:
+
+Existing BrainCoach-owned tables remain in public until separate approved migration.
+
+No schema creation approved yet.
+
+No table migration approved yet.
+
+First candidate implementation scope:
+
+* research.seasons
+* research.briefs
+* production.executions
+* production.outcomes
+* research.reviews
+
 # Evolution Status
 
 Stage 1
@@ -508,7 +619,32 @@ Stage 4
 
 Analytics & Intelligence Layer
 
-Planned
+In Progress
+
+Completed:
+
+* Production OS Canon v1
+* Research Season model
+* Research Brief model
+* Marketing Brief model
+* Content Plan model
+* Production Execution model
+* Production Outcome model
+* Signal Capture model
+* Season Review model
+* Knowledge Update model
+* Production OS Alignment Review
+* Production OS Audit Closure
+* Candidate Promotion Governance v1
+* Signal Aggregation Layer v1
+* Weekly Intelligence Report v1
+
+Pending:
+
+* Pattern Detection
+* Analytics Layer
+* Knowledge Graph
+* Physical schema implementation
 
 ---
 
@@ -521,15 +657,27 @@ Resolved:
 * Automation Architecture
 * Repository Registry
 * Research Intake Pipeline (Tracker → Observation → Signal Candidate)
+* BGS Database Boundary (DEC-016)
+* BGS Orch Schema Governance (DEC-017)
+* Production OS Canon v1
+* Production OS Object Model
+* Production OS Alignment Review
+* Production OS Audit Closure
+* Candidate Promotion Governance v1
+* Signal Aggregation Layer v1
+* Weekly Intelligence Report v1
 
 Current Constraints:
 
 * Signal taxonomy immaturity (classification noise)
-* No signal aggregation or pattern detection
+* No signal aggregation implementation yet
+* No pattern detection implementation
 * No analytics layer over accumulated signals
-* LLM provider fragmentation (Vertex AI migration pending)
+* No weekly intelligence reporting implementation yet
 * Knowledge graph and relationship layer not yet built
-* Offer Discovery
+* Production OS physical implementation not yet started
+* LLM provider fragmentation (Vertex AI migration pending)
+* Offer Discovery maturation
 * Content Factory Optimization
 * Content → Consultation Pipeline
 * Consultation → Revenue Pipeline
@@ -565,6 +713,34 @@ Knowledge Asset
 Objective:
 
 Validate that BrainCoach can continuously transform captured reality into structured signals, detect patterns across time, and produce research intelligence that drives knowledge production.
+
+Architecture Closure:
+
+Signal Candidate
+
+↓
+
+Candidate Promotion Governance
+
+↓
+
+Signal Aggregation Layer
+
+↓
+
+Weekly Intelligence Report
+
+↓
+
+Season Review
+
+↓
+
+Knowledge Update
+
+↓
+
+Knowledge Asset
 
 ---
 

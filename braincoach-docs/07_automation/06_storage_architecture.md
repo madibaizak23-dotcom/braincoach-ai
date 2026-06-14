@@ -1,4 +1,4 @@
-# BrainCoach Automation — Storage Architecture v1.0
+﻿# BrainCoach Automation — Storage Architecture v1.0
 
 Status: Active
 
@@ -44,6 +44,86 @@ BrainCoach uses six storage layers:
 4. Orchestration Storage
 5. External Registry Storage
 6. Reasoning Layer
+
+---
+
+# BGS Database Boundary
+
+Decision:
+
+`DEC-016 BGS Database Boundary: Core vs Orch`
+
+Status:
+
+Accepted
+
+Date:
+
+2026-06-14
+
+BrainCoach keeps the current two-database architecture:
+
+```text
+bgs_core
+    ↓
+human reality data
+
+bgs_orch
+    ↓
+knowledge, research process, production telemetry
+```
+
+No new database is created at this stage.
+
+## Boundary Rule
+
+`bgs_core` answers:
+
+> What is happening with people?
+
+`bgs_orch` answers:
+
+> How does BrainCoach collect, process, analyze and turn reality into knowledge?
+
+## Implementation Rule
+
+Season Research OS / Production OS objects should be added to `bgs_orch`, preferably under separate schemas:
+
+```sql
+knowledge.*
+research.*
+production.*
+agent.*
+```
+
+Do not add season production telemetry, agent evaluation, or prompt-performance data to `bgs_core`.
+
+Related spec:
+
+`braincoach-docs/07_automation/research_schema_v1_bgs_orch.md`
+
+First object specification:
+
+`braincoach-docs/07_automation/production_os/01_research/research_season.md`
+
+Schema segregation rule:
+
+`DEC-017 BGS Orch Schema Segregation`
+
+New BrainCoach-owned objects in `bgs_orch` must not be added to `public`.
+
+Future BrainCoach-owned objects should use:
+
+```sql
+knowledge.*
+research.*
+production.*
+agent.*
+```
+
+Existing `knowledge_assets`, `knowledge_events`, and `repository_journal` remain in `public` until a separate approved migration moves them.
+
+Any future SQL for these schemas must remain draft-only until explicit approval.
 
 ---
 

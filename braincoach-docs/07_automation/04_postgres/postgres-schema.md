@@ -1,8 +1,8 @@
 # PostgreSQL Schema
 
 Status: Active DBA Snapshot
-Last Updated: 2026-06-12
-Database: `braincoach_dev`, `bgs_core`
+Last Updated: 2026-06-14
+Database: `braincoach_dev` legacy snapshot, `bgs_core`, `bgs_orch`
 Schema: `public`
 
 ## Purpose
@@ -19,7 +19,67 @@ PostgreSQL owns:
 - offer and outcome persistence
 - operational event history
 
-The current source snapshot was collected from `information_schema.columns`.
+This document currently combines:
+
+- legacy `braincoach_dev` operational snapshot;
+- live `bgs_core` GPS MVP-1 confirmations;
+- live `bgs_orch` Knowledge Registry confirmations.
+
+Where a table belongs to a specific BGS database, the table section should say so explicitly.
+
+The original source snapshot was collected from `information_schema.columns`; later BGS sections include owner-provided live confirmations.
+
+## BGS Orch Snapshot
+
+Source:
+
+Owner-provided live `bgs_orch` `\d` and `information_schema` confirmation.
+
+Status:
+
+Confirmed live on 2026-06-14. Codex did not query or modify PostgreSQL.
+
+Full table inventory:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PUBLIC_TABLES_2026_06_14.md`
+
+Schemas:
+
+| schema | role |
+| --- | --- |
+| `public` | active application/runtime schema |
+| `information_schema` | PostgreSQL system schema |
+| `pg_catalog` | PostgreSQL system schema |
+| `pg_toast` | PostgreSQL system schema |
+
+Custom domain schemas such as `knowledge`, `research`, `production`, or `agent` do not exist yet in `bgs_orch`.
+
+Schema governance:
+
+`DEC-017 BGS Orch Schema Segregation` requires future BrainCoach-owned `bgs_orch` objects to be created outside `public`, in separate schemas:
+
+* `knowledge.*`
+* `research.*`
+* `production.*`
+* `agent.*`
+
+Existing `knowledge_assets`, `knowledge_events`, and `repository_journal` remain in `public` until a separate approved migration moves them.
+
+No schema creation or table movement is approved by this schema snapshot.
+
+BrainCoach-owned tables confirmed by live database inspection in `bgs_orch.public`:
+
+| table | BrainCoach role |
+| --- | --- |
+| `knowledge_assets` | live Knowledge Asset registry by `source_path` |
+| `knowledge_events` | Knowledge OS repository event stream |
+| `repository_journal` | persistent repository evolution journal |
+
+Confirmation note:
+
+`knowledge_assets` and `knowledge_events` were confirmed with live `\d` output. `repository_journal` was confirmed by the live `information_schema.tables` inventory; its column/index structure still requires separate `\d repository_journal` confirmation before any migration depends on it.
+
+The same `public` schema contains 97 total tables. Most are n8n platform/runtime tables such as `agents`, `execution_entity`, `credentials_entity`, `migrations`, `installed_nodes`, `chat_hub_*`, `instance_ai_*`, `workflow_*`, `project`, `user`, and related runtime tables. These are not BrainCoach-owned schema objects unless explicitly assigned later.
 
 ## Current Inventory
 
@@ -243,17 +303,18 @@ Purpose: Authoritative registry of repository Knowledge Objects after Stage 2 Fu
 
 Current role: primary source of truth for known repository assets.
 
+Live `bgs_orch` confirmation: 2026-06-14.
+
 | column | type | nullable | default |
 | --- | --- | --- | --- |
-| `id` | `uuid` | no | `gen_random_uuid()` |
-| `object_type` | `character varying` | no |  |
-| `object_name` | `character varying` | no |  |
-| `object_path` | `text` | no |  |
-| `version` | `character varying` | yes |  |
-| `status` | `character varying` | yes | `'active'::character varying` |
-| `first_seen` | `timestamp without time zone` | yes | `now()` |
-| `last_updated` | `timestamp without time zone` | yes | `now()` |
-| `metadata` | `jsonb` | yes | `'{}'::jsonb` |
+| `asset_id` | `text` | no | `gen_random_uuid()::text` |
+| `asset_name` | `text` | no |  |
+| `asset_type` | `text` | no |  |
+| `source_path` | `text` | no |  |
+| `source_of_truth` | `text` | yes |  |
+| `status` | `text` | no | `'active'::text` |
+| `created_at` | `timestamp without time zone` | no | `now()` |
+| `updated_at` | `timestamp without time zone` | no | `now()` |
 
 Stage 3 status: this table is the authoritative registry for repository Knowledge Objects.
 
@@ -263,17 +324,19 @@ Stage 4 note: this table should feed relationship discovery and graph constructi
 
 Purpose: GitHub synchronization event log for the Knowledge Registry.
 
+Live `bgs_orch` confirmation: 2026-06-14.
+
 | column | type | nullable | default |
 | --- | --- | --- | --- |
 | `id` | `uuid` | no | `gen_random_uuid()` |
-| `event_type` | `character varying` | no |  |
-| `repository` | `character varying` | no |  |
-| `branch` | `character varying` | no |  |
-| `commit_id` | `character varying` | no |  |
-| `event_timestamp` | `timestamp without time zone` | yes |  |
-| `metadata` | `jsonb` | yes | `'{}'::jsonb` |
-| `created_at` | `timestamp without time zone` | yes | `now()` |
-| `object_type` | `character varying` | yes |  |
+| `event_type` | `text` | no |  |
+| `repository` | `text` | no |  |
+| `branch` | `text` | no |  |
+| `commit_id` | `text` | no |  |
+| `event_timestamp` | `timestamp with time zone` | yes |  |
+| `object_type` | `text` | yes |  |
+| `metadata` | `jsonb` | yes |  |
+| `created_at` | `timestamp with time zone` | no | `now()` |
 
 ### `knowledge_objects`
 
@@ -506,7 +569,7 @@ Source: `information_schema.table_constraints` snapshot from 2026-06-08.
 | `conversation_state` | `conversation_state_pkey` | `id` |
 | `decision_log` | `decision_log_pkey` | `id` |
 | `events` | `events_pkey` | `id` |
-| `knowledge_assets` | `knowledge_assets_pkey` | `id` |
+| `knowledge_assets` | `knowledge_assets_pkey` | `asset_id` |
 | `knowledge_events` | `knowledge_events_pkey` | `id` |
 | `knowledge_objects` | `knowledge_objects_pkey` | `id` |
 | `memory_facts` | `memory_facts_pkey` | `id` |
@@ -527,7 +590,7 @@ Source: `information_schema.table_constraints` snapshot from 2026-06-08.
 | `clients` | `clients_telegram_user_id_key` | `telegram_user_id` | one client per Telegram user |
 | `conversation_state` | `conversation_state_telegram_user_id_key` | `telegram_user_id` | one active state per Telegram user |
 | `decision_log` | `decision_log_decision_id_key` | `decision_id` | one operational record per decision id |
-| `knowledge_assets` | `unique_object_path` | `object_path` | prevents duplicate repository assets |
+| `knowledge_assets` | `knowledge_assets_source_path_unique` | `source_path` | prevents duplicate repository assets |
 | `knowledge_objects` | `uq_knowledge_object_type` | `object_type` | one governance row per object type |
 | `offers_sent` | `offers_sent_telegram_user_id_offer_id_key` | `telegram_user_id`, `offer_id` | prevents duplicate offer sends per user and offer |
 
@@ -630,8 +693,8 @@ The index snapshot also includes n8n internal tables in the same `public` schema
 
 | index | definition |
 | --- | --- |
-| `knowledge_assets_pkey` | unique btree on `id` |
-| `unique_object_path` | unique btree on `object_path` |
+| `knowledge_assets_pkey` | unique btree on `asset_id` |
+| `knowledge_assets_source_path_unique` | unique btree on `source_path` |
 
 ### `knowledge_events`
 

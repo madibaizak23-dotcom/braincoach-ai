@@ -31,6 +31,22 @@ When sources disagree, use this priority order:
 
 Live PostgreSQL has priority when there is a mismatch.
 
+## Knowledge Assets Registry Rule
+
+`003_seed_knowledge_assets.sql` is a historical/dev bootstrap seed for the old knowledge assets shape.
+
+It must not be used to register new decision, architecture, or spec documents.
+
+For live `bgs_orch.knowledge_assets`, use a separate reviewed draft upsert file that targets the confirmed live columns:
+
+* `asset_name`
+* `asset_type`
+* `source_path`
+* `source_of_truth`
+* `status`
+
+Live registry upserts must use `ON CONFLICT (source_path)` and must be applied manually only after explicit approval.
+
 ## Required Migration Record
 
 For each migration, document:

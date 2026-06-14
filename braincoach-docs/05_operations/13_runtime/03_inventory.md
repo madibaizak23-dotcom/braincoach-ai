@@ -157,6 +157,21 @@ Status:
 
 Active
 
+Schema confirmation:
+
+Owner-provided live check on 2026-06-14 showed only system schemas plus `public`:
+
+* `information_schema`
+* `pg_catalog`
+* `pg_toast`
+* `public`
+
+No custom `knowledge`, `research`, `production`, or `agent` schemas exist yet.
+
+Full live `bgs_orch.public` table inventory:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PUBLIC_TABLES_2026_06_14.md`
+
 ---
 
 ## Tables
@@ -185,7 +200,7 @@ Repository change event stream for Knowledge OS synchronization.
 
 Live confirmation:
 
-Created in `bgs_orch` by owner on 2026-06-13.
+Created in `bgs_orch` by owner on 2026-06-13. Live `\d` confirmed on 2026-06-14.
 
 Key fields:
 
@@ -198,6 +213,10 @@ Key fields:
 * `object_type`
 * `metadata`
 * `created_at`
+
+Primary key:
+
+* `knowledge_events_pkey` on `id`
 
 ---
 
@@ -217,15 +236,23 @@ Live confirmation:
 
 Key fields:
 
-* `id`
-* `object_type`
-* `object_name`
-* `object_path`
-* `version`
+* `asset_id`
+* `asset_name`
+* `asset_type`
+* `source_path`
+* `source_of_truth`
 * `status`
-* `first_seen`
-* `last_updated`
-* `metadata`
+* `created_at`
+* `updated_at`
+
+Unique key:
+
+* `knowledge_assets_source_path_unique` on `source_path`
+
+Live registry assets confirmed 2026-06-14:
+
+* `DEC-016 BGS Database Boundary: Core vs Orch`
+* `Research Schema v1 for bgs_orch`
 
 ---
 

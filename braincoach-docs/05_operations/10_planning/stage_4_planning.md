@@ -1,6 +1,6 @@
 # Stage 4 — Analytics & Intelligence Layer
 
-Status: Planned
+Status: In Progress
 
 Date: 2026-06-09
 
@@ -17,6 +17,15 @@ Telegram → Tracker Entry → Observation → Signal Candidate → PostgreSQL
 ```
 
 The system now captures and stores structured research objects in production. Stage 4 makes this accumulated data useful through analytics, aggregation, and reporting.
+
+Production OS architecture was completed before physical implementation planning.
+
+Closure documents now define the missing bridge between Signal Candidate and Knowledge Asset:
+
+* `braincoach-docs/07_automation/production_os/06_governance/production_os_audit_closure_v1.md`
+* `braincoach-docs/07_automation/production_os/06_governance/candidate_promotion_governance_v1.md`
+* `braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md`
+* `braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md`
 
 ---
 
@@ -120,6 +129,10 @@ Constraints:
 * Do not promote candidates to confirmed signals without explicit review rules
 * Aggregation is analytical, not promotional
 
+Architecture reference:
+
+`braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md`
+
 ---
 
 ### 4. Pattern Detection
@@ -178,6 +191,39 @@ Constraints:
 * Reports must be based on real accumulated data, not synthetic examples
 * First reports may be internal-only until quality is validated
 
+Architecture reference:
+
+`braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md`
+
+---
+
+### 6. Candidate Promotion Governance
+
+Govern movement from signal candidates and knowledge candidates toward accepted knowledge or validated reality.
+
+Current state:
+
+* `research_signal_candidates` receives live data
+* Production OS defines Signal Capture, Season Review, and Knowledge Update
+* Promotion rules are now defined architecturally but not implemented
+
+Target state:
+
+* Manual-first review path from captured candidate to accepted candidate
+* Explicit validation requirement before any `bgs_core` promotion
+* No automatic phenomenon validation
+* No automatic offer approval
+
+Architecture reference:
+
+`braincoach-docs/07_automation/production_os/06_governance/candidate_promotion_governance_v1.md`
+
+Constraints:
+
+* No automatic writes to `bgs_core`
+* No live registry updates without reviewed draft upsert approval
+* No SQL or table design is approved by this planning document
+
 ---
 
 ## Carried Over from Stage 3
@@ -201,8 +247,9 @@ Recommended order:
 3. Signal Aggregation
 4. Pattern Detection
 5. Weekly Reports
-6. Signal promotion workflow
-7. Knowledge relationships (if capacity allows)
+6. Candidate Promotion Governance implementation
+7. Signal promotion workflow
+8. Knowledge relationships (if capacity allows)
 
 ---
 
@@ -215,6 +262,7 @@ Recommended order:
 | Report delivery | Telegram vs. GitHub artifact vs. both | Telegram for operator, GitHub for archive |
 | Pattern detection | Rule-based vs. LLM-assisted | Rule-based first, LLM for ambiguous cases |
 | Signal promotion | Manual review vs. automated threshold | Manual review until taxonomy v2 stabilizes |
+| Candidate promotion governance | automatic vs. manual-first | manual-first, no `bgs_core` writes without approval |
 
 ---
 
@@ -227,7 +275,8 @@ Stage 4 is complete when:
 3. Signal candidates are aggregated and deduplicated across observations
 4. At least one recurring pattern is detected from production data
 5. First weekly report is generated from real accumulated signals
-6. Documentation is synchronized across Knowledge OS
+6. Candidate promotion workflow is implemented as manual-first governance
+7. Documentation is synchronized across Knowledge OS
 
 ---
 
