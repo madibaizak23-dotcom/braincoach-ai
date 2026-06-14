@@ -65,7 +65,7 @@ TRG_ScheduledRun
 ### TG_SendMonitorReport
 
 - type: `n8n-nodes-base.telegram`
-- credential: `BrainCoach GPS`
+- credential: `BrainCoach Intelligence Monitor`
 - purpose: send the formatted report to the operator Telegram chat.
 
 Before first run, replace:
