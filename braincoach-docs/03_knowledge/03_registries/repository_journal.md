@@ -794,6 +794,43 @@ BrainCoach now has a readable top-level map for the full Production OS flow and 
 
 ---
 
+## RJ-021
+
+### date
+
+2026-06-14
+
+### type
+
+architecture
+
+### title
+
+Daily Intelligence Report v1 Drafted
+
+### summary
+
+Created the draft Production OS specification for BrainCoach Daily Intelligence Report v1 as a daily operational intelligence artifact for system state, active signals, emerging patterns, product insights, bottlenecks, and next-day priorities.
+
+### impact
+
+BrainCoach now has a daily intelligence object between raw observations and weekly synthesis. The artifact helps convert accumulated observations and signal candidates into research direction, product insight, knowledge update candidates, and weekly rollup material without changing SQL, migrations, or production workflow.
+
+### related_assets
+
+* braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_v1.md
+* braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md
+* braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md
+* braincoach-docs/07_automation/production_os/00_production_os_canon_v1.md
+* braincoach-docs/07_automation/production_os/README.md
+
+### related_decisions
+
+* DEC-016-bgs-database-boundary-core-vs-orch.md
+* DEC-017-bgs-orch-schema-segregation.md
+
+---
+
 # journal_management
 
 Основным владельцем журнала является:

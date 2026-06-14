@@ -13,12 +13,13 @@ Start here:
 - `02_marketing/` — Marketing Brief
 - `03_content/` — Content Plan
 - `04_execution/` — Production Execution and Production Outcome
-- `05_intelligence/` — Signal Capture, Season Review, Knowledge Update
+- `05_intelligence/` — Signal Capture, Daily Intelligence Report, Weekly Intelligence Report, Season Review, Knowledge Update
 - `06_governance/` — Production OS documentation governance
 
 ## Audit Closure
 
 - `05_intelligence/signal_aggregation_layer_v1.md` — groups isolated candidates before pattern detection
+- `05_intelligence/daily_intelligence_report_v1.md` — daily operational intelligence artifact for signals, patterns, bottlenecks, and next-day priorities
 - `05_intelligence/weekly_intelligence_report_v1.md` — weekly research intelligence artifact
 - `06_governance/candidate_promotion_governance_v1.md` — governs movement from candidates to knowledge or validated reality
 - `06_governance/production_os_audit_closure_v1.md` — closes alignment review gaps before technical implementation

@@ -81,6 +81,7 @@ The following documents close the gap between `Signal Candidate` and `Knowledge 
 - `braincoach-docs/07_automation/production_os/06_governance/production_os_audit_closure_v1.md`
 - `braincoach-docs/07_automation/production_os/06_governance/candidate_promotion_governance_v1.md`
 - `braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md`
+- `braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_v1.md`
 - `braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md`
 
 ## Packaging Status

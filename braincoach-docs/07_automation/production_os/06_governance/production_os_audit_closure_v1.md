@@ -28,6 +28,7 @@ The following missing governance and intelligence layers are now defined as arch
 
 - Candidate Promotion Governance v1;
 - Signal Aggregation Layer v1;
+- Daily Intelligence Report v1;
 - Weekly Intelligence Report v1.
 
 ## Open Architecture Questions
@@ -56,7 +57,19 @@ Defined in:
 
 `braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md`
 
-### 3. Weekly Intelligence
+### 3. Daily Intelligence
+
+Question:
+
+How does BrainCoach capture daily system state, active signals, emerging patterns, product insight, bottlenecks, and next-day priorities without turning them into validated knowledge?
+
+Closure:
+
+Defined in:
+
+`braincoach-docs/07_automation/production_os/05_intelligence/daily_intelligence_report_v1.md`
+
+### 4. Weekly Intelligence
 
 Question:
 
@@ -68,7 +81,7 @@ Defined in:
 
 `braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md`
 
-### 4. Physical Placement
+### 5. Physical Placement
 
 Question:
 
@@ -91,9 +104,10 @@ Still unresolved:
 - Signal Capture physical placement;
 - Knowledge Update physical placement;
 - Signal Aggregation physical placement;
+- Daily Intelligence Report physical placement;
 - Weekly Intelligence Report physical placement.
 
-### 5. bgs_orch To bgs_core Promotion
+### 6. bgs_orch To bgs_core Promotion
 
 Question:
 
@@ -119,7 +133,7 @@ production.outcomes
 research.reviews
 ```
 
-Signal aggregation, weekly reporting, and candidate promotion are now defined at architecture level, but still require implementation planning before persistence decisions.
+Signal aggregation, daily reporting, weekly reporting, and candidate promotion are now defined at architecture level, but still require implementation planning before persistence decisions.
 
 ## Non-Actions
 
