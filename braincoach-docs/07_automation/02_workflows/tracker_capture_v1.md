@@ -441,7 +441,11 @@ Former production export: `BrainCoach GPS OS — Stage 3 Complete.json`
 
 Migration status: completed 2026-06-13.
 
-Current production export: `BrainCoach GPS MVP-1 — bgs_core adapted.json`
+Previous production export: `BrainCoach GPS MVP-1 — bgs_core adapted.json`
+
+Current production export: `BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.json`
+
+Current production note: `BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.md`
 
 Migration report: `BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
 
@@ -451,6 +455,14 @@ Notes:
 - The Telegram trigger, voice transcription, routing, tracker extraction, signal candidate extraction, replies, `/start`, `/help`, and `/recent` paths were preserved.
 - The PostgreSQL layer now uses live `bgs_core` tables: `persons`, `trajectories`, `tracker_entries`, `observations`, `research_signal_candidates`, `activity_events`, and `trajectory_entries`.
 - The legacy Stage 3 export was removed from `03_n8n` after successful import and owner confirmation to prevent workflow duplication.
+
+MVP-1.1 production update:
+
+- Reflection Coach reply layer promoted to production on 2026-06-15.
+- Existing capture and persistence pipeline unchanged.
+- `TRK_BuildReflectionReply` now builds compact confirmation, question, mission, GPS signal, and milestone responses.
+- The static "Observation saved" reply pattern was replaced with short habit-supporting responses.
+- Telegram voice routing is explicitly `TG_Trigger -> VOI_CheckVoice`, so text messages do not attempt to fetch a voice file.
 
 First validated signal categories: `self_initiation`, `dependence_external`
 

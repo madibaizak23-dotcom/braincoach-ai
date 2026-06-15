@@ -1,0 +1,964 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('SYS_BuildInputContext').first().json.text }}",
+        "options": {
+          "systemMessage": "You are Tracker Extractor for BrainCoach GPS MVP-1.\n\nClassify the user's tracker input. Return strict JSON only:\n\n{\n  \"entry_type\": \"note\",\n  \"tags\": [],\n  \"summary\": \"\"\n}\n\nAllowed entry_type values:\nnote\nobservation\ninsight\nfeeling\nidea\ndecision\nhypothesis\ntask\n\nRules:\n- Short activity facts like \"английский 60\", \"лёд 60\", \"дриблинг 30\" may be classified as \"note\"; deterministic parsing happens later.\n- Use \"observation\" for factual behavior/state observations.\n- Use \"insight\" for conclusions or learning.\n- Use \"feeling\" for emotional/body state notes.\n- tags maximum 5, lowercase only.\n- summary maximum 20 words.\n- Use only the user's text.\n- Do not invent facts.\n\nReturn JSON only."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2448,
+        64
+      ],
+      "id": "969d2e22-6631-4860-8ccc-414afacc4e69",
+      "name": "TRK_ExtractEntry",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4704,
+        384
+      ],
+      "id": "3041c61b-0500-43dd-bef7-865f999d4290",
+      "name": "TRK_ReplySaved",
+      "webhookId": "40a58b8b-157d-4af0-a8d1-c344496c9300",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH saved_entry AS (\n  INSERT INTO tracker_entries (\n    person_id,\n    content,\n    entry_type\n  )\n  VALUES (\n    '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid,\n    '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n    '{{$json.entry_type}}'\n  )\n  RETURNING\n    entry_id,\n    person_id,\n    entry_type,\n    content,\n    created_at\n),\nsaved_activity AS (\n  INSERT INTO activity_events (\n    trajectory_id,\n    person_id,\n    activity_type_code,\n    duration_minutes,\n    status,\n    notes,\n    source,\n    created_by_person_id,\n    created_at\n  )\n  SELECT\n    '{{ $(\"SYS_BuildInputContext\").first().json.trajectory_id }}'::uuid,\n    se.person_id,\n    '{{$json.activity_type_code}}',\n    {{$json.duration_minutes || 'NULL'}},\n    'completed',\n    se.content,\n    'telegram_bot',\n    se.person_id,\n    NOW()\n  FROM saved_entry se\n  WHERE {{$json.is_activity_event ? 'TRUE' : 'FALSE'}}\n  RETURNING activity_event_id\n),\nsaved_trajectory_entry AS (\n  INSERT INTO trajectory_entries (\n    trajectory_id,\n    person_id,\n    tracker_entry_id,\n    entry_type,\n    content,\n    source,\n    created_by_person_id,\n    created_at\n  )\n  SELECT\n    '{{ $(\"SYS_BuildInputContext\").first().json.trajectory_id }}'::uuid,\n    se.person_id,\n    se.entry_id,\n    '{{$json.trajectory_entry_type || \"general_note\"}}',\n    se.content,\n    'telegram_bot',\n    se.person_id,\n    NOW()\n  FROM saved_entry se\n  WHERE NOT {{$json.is_activity_event ? 'TRUE' : 'FALSE'}}\n  RETURNING entry_id AS trajectory_entry_id\n)\nSELECT\n  se.entry_id,\n  se.entry_id AS id,\n  se.person_id,\n  se.entry_type,\n  se.content,\n  (SELECT activity_event_id FROM saved_activity LIMIT 1) AS activity_event_id,\n  (SELECT trajectory_entry_id FROM saved_trajectory_entry LIMIT 1) AS trajectory_entry_id\nFROM saved_entry se;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3008,
+        64
+      ],
+      "id": "3491a652-c7c7-4822-ab16-7d38129a65a8",
+      "name": "TRK_SaveEntry",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total\nFROM tracker_entries\nWHERE person_id = '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4368,
+        80
+      ],
+      "id": "ef58fe30-e655-4f31-961a-e8cff6d63a28",
+      "name": "TRK_GetEntryCount",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -64
+      ],
+      "id": "5e5a0400-c187-4ada-a146-431308efca94",
+      "name": "VOI_GetFile",
+      "webhookId": "59cf3a22-0bd3-4336-8fd7-1d913e84a254",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e213a75f-bb27-4269-980c-271c6e00d35e",
+              "leftValue": "={{ $json.message.voice?.file_id || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        192
+      ],
+      "id": "f2855656-04e1-473b-b6ac-b231ebc5ff74",
+      "name": "VOI_CheckVoice"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n  conversation_id,\n  role,\n  content,\n  created_at\n)\nVALUES (\n  '{{ $(\"SYS_BuildInputContext\").first().json.conversation_id }}'::uuid,\n  'user',\n  '{{ ($json.text || \"\").replace(/'/g,\"''\") }}',\n  NOW()\n)\nRETURNING message_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2192,
+        64
+      ],
+      "id": "4143a254-0ab3-4b16-a3da-7e7a04b13526",
+      "name": "TRK_SaveRawEvent",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $input.first().json.output || \"\";\n\nraw = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = {\n    entry_type: \"note\",\n    tags: [],\n    summary: \"parse fallback\",\n    error: e.message\n  };\n}\n\nconst sourceText = ($('SYS_BuildInputContext').first().json.text || \"\").trim();\nconst lower = sourceText.toLowerCase();\nconst activityMap = [\n  { pattern: /^(английский|english)\\s+(\\d{1,3})\\b/i, code: \"english\" },\n  { pattern: /^(лёд|лед|ice)\\s+(\\d{1,3})\\b/i, code: \"ice\" },\n  { pattern: /^(дриблинг|dribbling|dribble)\\s+(\\d{1,3})\\b/i, code: \"dribbling\" }\n];\n\nlet activity = null;\nfor (const item of activityMap) {\n  const match = lower.match(item.pattern);\n  if (match) {\n    activity = {\n      activity_type_code: item.code,\n      duration_minutes: Number(match[2])\n    };\n    break;\n  }\n}\n\nconst allowedTrackerTypes = new Set([\n  \"note\",\n  \"idea\",\n  \"insight\",\n  \"decision\",\n  \"observation\",\n  \"hypothesis\",\n  \"task\",\n  \"feeling\"\n]);\n\nif (!allowedTrackerTypes.has(parsed.entry_type)) {\n  parsed.entry_type = \"note\";\n}\n\nconst trajectoryTypeMap = {\n  note: \"general_note\",\n  idea: \"general_note\",\n  decision: \"general_note\",\n  hypothesis: \"general_note\",\n  task: \"general_note\",\n  observation: \"observation\",\n  insight: \"insight\",\n  feeling: \"feeling\"\n};\n\nreturn [{\n  json: {\n    ...parsed,\n    is_activity_event: Boolean(activity),\n    activity_type_code: activity?.activity_type_code || null,\n    duration_minutes: activity?.duration_minutes || null,\n    trajectory_entry_type: trajectoryTypeMap[parsed.entry_type] || \"general_note\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        64
+      ],
+      "id": "0cf3d98b-34f3-4764-ba27-34715346391c",
+      "name": "TRK_ParseEntry"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8eb3ff0e-3c3c-4351-bc9c-2f50045b17ff",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/recent",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        576
+      ],
+      "id": "a5462f95-f4ec-4fd7-82b1-b929fe20579a",
+      "name": "HIS_CheckRecent"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  entry_id,\n  entry_id AS id,\n  entry_type,\n  content\nFROM tracker_entries\nWHERE person_id = '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid\n  AND content NOT LIKE '/%'\nORDER BY created_at DESC\nLIMIT 5;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2416,
+        560
+      ],
+      "id": "91cd8191-cc10-4435-99a9-60c4c762297c",
+      "name": "HIS_LoadEntries",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const entries = $input.all();\n\nif (entries.length === 0) {\n  return [{\n    json: {\n      reply: 'Пока нет сохранённых записей.'\n    }\n  }];\n}\n\nconst lines = entries.map(entry => {\n  const icon =\n    entry.json.entry_type === 'observation' ? '🧭' :\n    entry.json.entry_type === 'insight' ? '💡' :\n    '•';\n\n  return `${icon} ${entry.json.content}`;\n});\n\nreturn [{\n  json: {\n    reply:\n      'Последние записи:\\n\\n' +\n      lines.join('\\n\\n')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        560
+      ],
+      "id": "c673d344-b1a6-4994-8831-8e7f39504eeb",
+      "name": "HIS_FormatReply"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2832,
+        560
+      ],
+      "id": "fa97acbd-d55b-4a8e-9daa-ad41c11bb433",
+      "name": "HIS_Reply",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8bb800f-dfc8-4606-903b-87e6d0bfd80a",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "tracker",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        272
+      ],
+      "id": "e3ee3b03-ca41-4498-8ed5-39c308b67a5d",
+      "name": "TRK_IsTrackerEvent"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH existing_person AS (\n  SELECT person_id\n  FROM persons\n  WHERE source = 'telegram'\n    AND external_id = '{{ $node[\"TG_Trigger\"].json.message.from.id }}'\n  ORDER BY created_at ASC\n  LIMIT 1\n),\ninserted_person AS (\n  INSERT INTO persons (\n    external_id,\n    source,\n    role,\n    first_name,\n    status,\n    created_at,\n    updated_at\n  )\n  SELECT\n    '{{ $node[\"TG_Trigger\"].json.message.from.id }}',\n    'telegram',\n    'athlete',\n    '{{ ($node[\"TG_Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}',\n    'active',\n    NOW(),\n    NOW()\n  WHERE NOT EXISTS (SELECT 1 FROM existing_person)\n  RETURNING person_id\n),\nperson_row AS (\n  SELECT person_id FROM existing_person\n  UNION ALL\n  SELECT person_id FROM inserted_person\n  LIMIT 1\n),\nupdated_person AS (\n  UPDATE persons p\n  SET\n    first_name = COALESCE(NULLIF('{{ ($node[\"TG_Trigger\"].json.message.from.first_name || \"\").replace(/'/g, \"''\") }}', ''), p.first_name),\n    role = COALESCE(NULLIF(p.role, ''), 'athlete'),\n    updated_at = NOW()\n  FROM person_row pr\n  WHERE p.person_id = pr.person_id\n  RETURNING p.person_id\n),\nexisting_conversation AS (\n  SELECT conversation_id\n  FROM conversations\n  WHERE person_id = (SELECT person_id FROM person_row)\n    AND channel = 'telegram'\n    AND status = 'active'\n  ORDER BY started_at DESC\n  LIMIT 1\n),\ninserted_conversation AS (\n  INSERT INTO conversations (person_id, channel, status, started_at)\n  SELECT person_id, 'telegram', 'active', NOW()\n  FROM person_row\n  WHERE NOT EXISTS (SELECT 1 FROM existing_conversation)\n  RETURNING conversation_id\n),\nconversation_row AS (\n  SELECT conversation_id FROM existing_conversation\n  UNION ALL\n  SELECT conversation_id FROM inserted_conversation\n  LIMIT 1\n),\nexisting_trajectory AS (\n  SELECT trajectory_id\n  FROM trajectories\n  WHERE person_id = (SELECT person_id FROM person_row)\n    AND status = 'active'\n  ORDER BY created_at ASC\n  LIMIT 1\n),\ninserted_trajectory AS (\n  INSERT INTO trajectories (\n    person_id,\n    domain_code,\n    title,\n    status,\n    created_at,\n    updated_at\n  )\n  SELECT\n    person_id,\n    'sport',\n    'Telegram GPS Tracker',\n    'active',\n    NOW(),\n    NOW()\n  FROM person_row\n  WHERE NOT EXISTS (SELECT 1 FROM existing_trajectory)\n  RETURNING trajectory_id\n),\ntrajectory_row AS (\n  SELECT trajectory_id FROM existing_trajectory\n  UNION ALL\n  SELECT trajectory_id FROM inserted_trajectory\n  LIMIT 1\n)\nSELECT\n  (SELECT person_id FROM person_row) AS person_id,\n  (SELECT conversation_id FROM conversation_row) AS conversation_id,\n  (SELECT trajectory_id FROM trajectory_row) AS trajectory_id,\n  'tracking' AS current_stage,\n  TRUE AS allow_reminders,\n  'capture' AS sub_stage,\n  NULL::text AS pattern_type,\n  '{}'::jsonb AS qualification_signals;",
+        "additionalFields": {}
+      },
+      "name": "SYS_LoadContext",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        144
+      ],
+      "id": "9bcbebd9-5b24-4ae5-8501-9a8e197c907c",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.text || \"\";\nconst text = rawText.trim();\n\nif (!text) {\n  throw new Error(\"No text available\");\n}\n\nif (text.startsWith(\"/\")) {\n  return [{\n    json: {\n      route: \"command\",\n      text: text.startsWith(\"/help\") ? \"/start\" : text\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    route: \"tracker\",\n    text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        192
+      ],
+      "id": "f1c67d1a-ee79-40c6-9985-9187d0dc28e4",
+      "name": "SYS_RouteInput"
+    },
+    {
+      "parameters": {
+        "jsCode": "let voiceText = \"\";\n\ntry {\n  voiceText = $('VOI_NormalizeTranscript').first().json.text;\n} catch (e) {\n  voiceText = \"\";\n}\n\nconst telegramText =\n  $('TG_Trigger').first()?.json?.message?.text || \"\";\n\nreturn [{\n  json: {\n    text: voiceText || telegramText,\n    person_id: $json.person_id,\n    conversation_id: $json.conversation_id,\n    trajectory_id: $json.trajectory_id,\n    current_stage: $json.current_stage,\n    sub_stage: $json.sub_stage,\n    pattern_type: $json.pattern_type,\n    allow_reminders: $json.allow_reminders\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        192
+      ],
+      "id": "3d505e9d-c6c1-4c31-964a-e2f3a723c45d",
+      "name": "SYS_BuildInputContext"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    text: $json.text || \"\",\n    route: \"voice\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -48
+      ],
+      "id": "b18b81a7-a022-42a2-8947-4d4c4532493f",
+      "name": "VOI_NormalizeTranscript"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO observations (\n  person_id,\n  source_type,\n  observation_text,\n  confidence,\n  created_at\n)\nVALUES (\n  '{{ $(\"SYS_BuildInputContext\").first().json.person_id }}'::uuid,\n  'telegram_tracker',\n  '{{ $(\"SYS_BuildInputContext\").first().json.text.replace(/'/g,\"''\") }}',\n  NULL,\n  NOW()\n)\nRETURNING\n  observation_id,\n  observation_id AS id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3216,
+        64
+      ],
+      "id": "0dc31ef8-3b27-4145-8347-9fec3208c1d5",
+      "name": "OBS_CreateObservation",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('SYS_BuildInputContext').first().json.text }}",
+        "options": {
+          "systemMessage": "You are Signal Extractor for BrainCoach GPS.\n\nYour task is to inspect an observation and decide whether it contains a useful research signal for self-learning, self-initiation, emotional reaction, attention shift, tutor interaction, or potential realization.\n\nReturn JSON only:\n\n{\n  \"has_signal\": true,\n  \"signal_text\": \"\",\n  \"signal_type\": \"unknown\",\n  \"confidence\": 0.0,\n  \"evidence\": \"\",\n  \"reason\": \"\"\n}\n\nAllowed signal_type:\n- self_initiation\n- dependence_external\n- focus_shift\n- emotional_reaction\n- tutor_interaction\n- potential_realization\n- unknown\n\nRules:\n* has_signal is true only when there is a clear behavioral or learning signal.\n* signal_text must be no longer than 10 words.\n* confidence must be from 0.0 to 1.0.\n* evidence must come from the observation.\n* Do not invent facts.\n\nReturn JSON only."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3408,
+        64
+      ],
+      "id": "777f5006-c929-481c-9736-7c04c10ec11d",
+      "name": "SIG_ExtractSignalCandidate",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $input.first().json.output || \"\";\n// Remove markdown fences like ```json ... ```.\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\ntry {\n  return [{ json: JSON.parse(raw) }];\n} catch (e) {\n  return [{ json: { has_signal: false, error: \"Invalid JSON structure\" } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        64
+      ],
+      "id": "84465c81-a0c4-47b3-8f4c-7146240a5b21",
+      "name": "SIG_ParseCandidate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6f43e5c7-df3a-4db3-bc12-d9f78326a090",
+              "leftValue": "={{ $json.has_signal }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3904,
+        64
+      ],
+      "id": "5376bd13-abe2-48f8-b139-96989257b248",
+      "name": "SIG_HasCandidate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO research_signal_candidates (\n  observation_id,\n  signal_name,\n  confidence,\n  status,\n  created_at\n)\nVALUES (\n  $1::uuid,\n  $2,\n  $3::numeric,\n  'candidate',\n  NOW()\n)\nRETURNING candidate_id;",
+        "options": {
+          "queryReplacement": "={{\n[\n$('OBS_CreateObservation').first().json.observation_id,\n$json.signal_text || $json.signal_type || \"unknown\",\nNumber($json.confidence || 0)\n]\n}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4128,
+        -64
+      ],
+      "id": "d4c226fa-5da6-4f08-b2bc-125b426f4689",
+      "name": "DB_SaveSignalCandidate",
+      "credentials": {
+        "postgres": {
+          "id": "bzBI7dsjLbTrWIIp",
+          "name": "POSTGRES | BGS_CORE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2928,
+        400
+      ],
+      "id": "ac403ba6-7aba-41a4-8321-b5043cb0101d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pPPUaCCHLhRsrNdr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        -64
+      ],
+      "id": "834e1ba6-5cde-4cb2-8408-399717f2b2f4",
+      "name": "VOI_Transcribe",
+      "credentials": {
+        "openAiApi": {
+          "id": "pPPUaCCHLhRsrNdr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8eb3ff0e-3c3c-4351-bc9c-2f50045b17ff",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2336,
+        752
+      ],
+      "id": "207bf26b-a81b-4bb3-96f9-8c34f6aae992",
+      "name": "HIS_CheckStart"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "=🧭 BrainCoach GPS\n\nЭто место для коротких наблюдений по дороге.\nПиши одним сообщением: что сделал, что заметил, что почувствовал.\n\nПримеры:\nанглийский 40 мин\nлёд 1 час\nсам начал разминку\nбыло сложно начать\nпосле тренировки злился\n\nКоманды:\n/recent - последние записи\n/help - помощь",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2624,
+        752
+      ],
+      "id": "a652c3db-8b13-4c8a-bb50-b8e8c5e6ea6d",
+      "name": "HIS_ReplyStart",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TG_Trigger').item.json.message.chat.id }}",
+        "text": "=Не понял команду. Просто напиши наблюдение или используй /recent.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2672,
+        1024
+      ],
+      "id": "b74d3fc1-0af5-4696-9445-8d4d178fdc14",
+      "name": "HIS_UnknownCommand",
+      "webhookId": "0f7287a6-6f53-4cf5-a640-09e8243719dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const total = Number($json.total ?? $('TRK_GetEntryCount').first().json.total ?? 0);\nconst personId = String($('SYS_BuildInputContext').first().json.person_id ?? '');\n\nconst confirmations = [\n  '🧭 Записал.',\n  '✅ Сохранил.',\n  '👍 Есть.',\n  '🎯 Поймал момент.',\n  '🏒 Принял.'\n];\n\nconst shortQuestions = [\n  'Что чувствовал?',\n  'Было легко?',\n  'Где стало сложно?',\n  'Что помогло начать?',\n  'Сам заметил?'\n];\n\nconst missions = [\n  '🏅 Наблюдатель +1. Поймай ещё один момент.',\n  '✅ Записал. Миссия: заметить момент перед стартом.',\n  '🎯 Поймай момент, когда не хотелось начинать.'\n];\n\nconst gpsSignalQuestions = [\n  '🏒 Что сегодня сделал без напоминаний?',\n  '⚡ В какой момент было больше всего энергии?',\n  '🎯 Что оказалось сложнее, чем ожидал?',\n  '🧭 Что помогло не бросить?',\n  '🚀 Что захотелось сделать самому?'\n];\n\nconst deepQuestions = [\n  ['🏒 Уже 5 наблюдений.', 'Что помогает тебе двигаться вперёд даже когда не хочется?'],\n  ['🏒 Уже 15 наблюдений.', 'Что ты стал делать чаще без напоминаний?'],\n  ['🧭 Уже 30 наблюдений.', 'Что ты чаще всего замечаешь за собой?'],\n  ['🏒 Уже 50 наблюдений.', 'Где стало больше самостоятельности?'],\n  ['🚀 Уже 75 наблюдений.', 'Что теперь запускаешь сам?'],\n  ['🧭 Уже 100 наблюдений.', 'Что ты понял про себя как игрока?']\n];\n\nfunction milestoneLines(count) {\n  const milestones = [5, 15, 30, 50, 75, 100];\n  const exact = milestones.indexOf(count);\n  if (exact !== -1) return deepQuestions[exact];\n  if (count > 100 && count % 50 === 0) {\n    return [`🧭 Уже ${count} наблюдений.`, 'Что ты понял про себя как игрока?'];\n  }\n  return null;\n}\n\nlet hash = total * 37;\nfor (const ch of personId) hash = (hash + ch.charCodeAt(0)) % 1000;\nconst roll = hash % 100;\nconst milestone = milestoneLines(total);\n\nlet lines;\nlet replyType;\n\nif (milestone) {\n  lines = milestone;\n  replyType = 'deep';\n} else if (total >= 20 && roll >= 96) {\n  lines = [gpsSignalQuestions[(total + roll) % gpsSignalQuestions.length]];\n  replyType = 'gps_signal_question';\n} else if (roll < 70) {\n  lines = [confirmations[total % confirmations.length]];\n  replyType = 'confirmation';\n} else if (roll < 90) {\n  lines = [shortQuestions[total % shortQuestions.length]];\n  replyType = 'short_question';\n} else {\n  lines = [missions[total % missions.length]];\n  replyType = 'mission';\n}\n\nreturn [{\n  json: {\n    ...$json,\n    reply_text: lines.join('\\n\\n'),\n    reflection_total: total,\n    reflection_type: replyType,\n    reflection_deep: replyType === 'deep'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4768,
+        32
+      ],
+      "id": "cc72cb5f-1de7-4abd-a3c9-83c72ab8c727",
+      "name": "TRK_BuildReflectionReply"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "78bc4026-4778-4208-96bf-925f016ed91d",
+      "name": "TG_Trigger",
+      "webhookId": "97fd8d53-df7f-4466-be31-8f8e89ea8314",
+      "credentials": {
+        "telegramApi": {
+          "id": "iYuLhdUlxnUsCFPp",
+          "name": "BrainCoach GPS"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "TRK_ExtractEntry": {
+      "main": [
+        [
+          {
+            "node": "TRK_ParseEntry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_SaveEntry": {
+      "main": [
+        [
+          {
+            "node": "OBS_CreateObservation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_GetEntryCount": {
+      "main": [
+        [
+          {
+            "node": "TRK_BuildReflectionReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_GetFile": {
+      "main": [
+        [
+          {
+            "node": "VOI_Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_CheckVoice": {
+      "main": [
+        [
+          {
+            "node": "VOI_GetFile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SYS_LoadContext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_SaveRawEvent": {
+      "main": [
+        [
+          {
+            "node": "TRK_ExtractEntry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_ParseEntry": {
+      "main": [
+        [
+          {
+            "node": "TRK_SaveEntry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIS_CheckRecent": {
+      "main": [
+        [
+          {
+            "node": "HIS_LoadEntries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HIS_CheckStart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIS_LoadEntries": {
+      "main": [
+        [
+          {
+            "node": "HIS_FormatReply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIS_FormatReply": {
+      "main": [
+        [
+          {
+            "node": "HIS_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_IsTrackerEvent": {
+      "main": [
+        [
+          {
+            "node": "TRK_SaveRawEvent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HIS_CheckRecent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_LoadContext": {
+      "main": [
+        [
+          {
+            "node": "SYS_BuildInputContext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_RouteInput": {
+      "main": [
+        [
+          {
+            "node": "TRK_IsTrackerEvent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_BuildInputContext": {
+      "main": [
+        [
+          {
+            "node": "SYS_RouteInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_NormalizeTranscript": {
+      "main": [
+        [
+          {
+            "node": "SYS_LoadContext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OBS_CreateObservation": {
+      "main": [
+        [
+          {
+            "node": "SIG_ExtractSignalCandidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SIG_ExtractSignalCandidate": {
+      "main": [
+        [
+          {
+            "node": "SIG_ParseCandidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SIG_ParseCandidate": {
+      "main": [
+        [
+          {
+            "node": "SIG_HasCandidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SIG_HasCandidate": {
+      "main": [
+        [
+          {
+            "node": "DB_SaveSignalCandidate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TRK_GetEntryCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB_SaveSignalCandidate": {
+      "main": [
+        [
+          {
+            "node": "TRK_GetEntryCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "TRK_ExtractEntry",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "SIG_ExtractSignalCandidate",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VOI_Transcribe": {
+      "main": [
+        [
+          {
+            "node": "VOI_NormalizeTranscript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HIS_CheckStart": {
+      "main": [
+        [
+          {
+            "node": "HIS_ReplyStart",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HIS_UnknownCommand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRK_BuildReflectionReply": {
+      "main": [
+        [
+          {
+            "node": "TRK_ReplySaved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG_Trigger": {
+      "main": [
+        [
+          {
+            "node": "VOI_CheckVoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab89f6b3490ade6eb9cfd01ad4970c303928df2abf26973c8193b5177427e7ef"
+  }
+}

@@ -902,6 +902,37 @@ BrainCoach now has an explicit boundary between the intelligence design artifact
 
 ---
 
+# entry
+
+### date
+
+2026-06-15
+
+### title
+
+BrainCoach GPS MVP-1.1 Reflection Coach Activated
+
+### summary
+
+The BrainCoach GPS production workflow was upgraded to MVP-1.1 with a compact Reflection Coach reply layer. The active workflow now uses `BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.json`.
+
+### impact
+
+GPS remains an observation capture system rather than a standalone chat bot. After successful observation capture, the workflow now returns short confirmations, occasional reflection questions, missions, rare GPS signal prompts, and milestone prompts. The existing data pipeline into `tracker_entries`, `observations`, and `research_signal_candidates` was preserved.
+
+### validation
+
+Live Telegram testing confirmed text capture, compact replies, milestone behavior, valid Russian/emoji encoding, and corrected voice routing through `VOI_CheckVoice`.
+
+### related_assets
+
+* braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.json
+* braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.md
+* braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach Sandbox.json
+* braincoach-docs/07_automation/02_workflows/tracker_capture_v1.md
+
+---
+
 # journal_management
 
 Основным владельцем журнала является:

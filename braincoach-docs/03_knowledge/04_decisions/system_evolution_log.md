@@ -1372,3 +1372,54 @@ Current Stage: Stage 4 Planned
 Long-Term Goal:
 
 Create a self-improving knowledge ecosystem capable of detecting signals, generating research, producing knowledge assets, and continuously expanding its own understanding of the world.
+
+---
+
+### BrainCoach GPS MVP-1.1 Reflection Coach Promoted
+
+Date: 2026-06-15
+
+Status: Production
+
+Objective:
+
+Promote the Reflection Coach reply layer from sandbox testing into the active BrainCoach GPS workflow while preserving the existing GPS capture and persistence pipeline.
+
+Production workflow:
+
+`BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish`
+
+Production export:
+
+`braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.json`
+
+Production note:
+
+`braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.md`
+
+Pipeline preserved:
+
+```text
+Telegram
+-> tracker_entries
+-> observations
+-> research_signal_candidates
+-> PostgreSQL
+```
+
+Change:
+
+* Added `TRK_BuildReflectionReply` after `TRK_GetEntryCount`.
+* Replaced static save replies with compact rotating GPS responses.
+* Added confirmation, short question, mission, rare GPS signal question, and milestone response types.
+* Corrected Telegram voice routing so `TG_Trigger` routes through `VOI_CheckVoice` before `VOI_GetFile`.
+
+Database impact:
+
+* No schema changes.
+* No new tables.
+* Existing `tracker_entries` count query reused.
+
+Outcome:
+
+MVP-1.1 is active as the current GPS production workflow. The primary pilot KPI is whether Reflection Coach increases observation volume per user by 20-30% compared with MVP-1.

@@ -343,7 +343,7 @@ TRAJ_ — Trajectory Layer (planned)
 
 ## Current Status
 
-Version: V3
+Version: MVP-1.1
 
 State: Production
 
@@ -390,7 +390,9 @@ Planned (Stage 4):
 ## Documentation References
 
 * Workflow spec: `braincoach-docs/07_automation/02_workflows/tracker_capture_v1.md`
-* Production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
+* Production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.json`
+* Production note: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1.1 — Reflection Coach GPS Publish.md`
+* Previous production export: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.json`
 * Migration report: `braincoach-docs/07_automation/03_n8n/BrainCoach GPS MVP-1 — bgs_core adapted.diff-report.md`
 * Signal candidates table: `braincoach-docs/07_automation/04_postgres/research_signal_candidates.md`
 * Stage 3 report: `braincoach-docs/05_operations/reviews/stage_3_completion_report.md`
