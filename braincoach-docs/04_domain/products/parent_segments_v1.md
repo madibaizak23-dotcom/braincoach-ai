@@ -10,6 +10,48 @@ Identify parent segments experiencing the highest pain related to dependence on 
 
 ---
 
+# Current Market Discovery Hypothesis
+
+Source:
+
+`braincoach-docs/05_operations/10_planning/market_discovery_v1.md`
+
+Primary working segment:
+
+Competitive Trajectory Families
+
+Definition:
+
+Families investing significant resources into educational, athletic, academic, or long-term achievement trajectories.
+
+Core Concern:
+
+"We invested so much. Why didn't it work?"
+
+Why this segment matters:
+
+* meaningful investment already exists
+* families have prior purchase behavior
+* trajectory events create urgency
+* loss of opportunity is visible and emotionally expensive
+* long-term results remain uncertain until late
+
+Core market hypothesis:
+
+Families pursuing competitive trajectories are not only buying independence.
+
+They are buying reduced trajectory risk, stability, potential realization, protection against lost opportunity, and confidence that investments convert into long-term results.
+
+Market frame:
+
+Lost Opportunity After Investment
+
+Validation status:
+
+Working hypothesis. Requires parent interviews and content/consultation signal testing.
+
+---
+
 # Core Market Problem
 
 Dependence on External Management
@@ -180,9 +222,9 @@ Very High
 
 ---
 
-# Initial Commercial Hypothesis
+# Previous Commercial Hypothesis
 
-Most likely beachhead segment:
+Former likely beachhead segment:
 
 Segment 01
 
@@ -198,6 +240,10 @@ Feels emotional burden immediately
 
 Can recognize improvement quickly
 
+Current interpretation:
+
+Exhausted Manager Parent remains a strong pain segment, but may be a sub-segment inside Competitive Trajectory Families rather than the primary market definition.
+
 ---
 
 # Research Questions
@@ -212,8 +258,12 @@ Can recognize improvement quickly
 
 5. Which segment best matches BrainCoach positioning?
 
+6. Do Competitive Trajectory Families show stronger willingness to pay than daily-supervision segments?
+
+7. Which competitive trajectory creates the strongest purchase trigger: education, sport, academics, or long-term achievement preparation?
+
 ---
 
 # Next Step
 
-Conduct interviews and content testing to validate the beachhead segment before designing the first commercial offer.
+Conduct interviews and content testing to validate Competitive Trajectory Families before designing the first commercial offer.

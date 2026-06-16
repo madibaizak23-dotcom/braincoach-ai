@@ -10,6 +10,28 @@ Identify the strongest market entry points for BrainCoach GPS based on parent pa
 
 ---
 
+# Current Market Alignment
+
+Primary working segment:
+
+Competitive Trajectory Families
+
+Core concern:
+
+"We invested so much. Why didn't it work?"
+
+Updated parent purchase motives:
+
+* reduced risk
+* trajectory stability
+* potential realization
+* protection against lost opportunity
+* confidence that investments convert into results
+
+Dependence on external management remains a strong mechanism-level problem, but the market-level purchase language should be tested around trajectory risk and conversion of investment into long-term outcomes.
+
+---
+
 # Core Market Problem
 
 Dependence On External Management
@@ -221,7 +243,7 @@ Medium
 
 ---
 
-# Initial Commercial Hypothesis
+# Previous Commercial Hypothesis
 
 Primary Market Entry:
 
@@ -239,6 +261,10 @@ The desired outcome is easy to observe.
 
 The proof of success is measurable.
 
+Current interpretation:
+
+Angle 01 remains commercially useful as a concrete pain door, but the higher-level offer hypothesis is now Competitive Trajectory Families and trajectory risk.
+
 ---
 
 # Research Objective
@@ -251,3 +277,7 @@ Determine which angle generates:
 * highest willingness to pay
 
 before designing BrainCoach GPS Offer V1.
+
+Additional current objective:
+
+Determine whether trajectory risk language outperforms reduced-supervision language in interviews, DMs, consultations, and content response.

@@ -23,6 +23,7 @@ Start here:
 - `05_intelligence/daily_intelligence_report_generator_v1.md` — design spec for future draft generation from live intelligence sources
 - `05_intelligence/weekly_intelligence_report_v1.md` — weekly research intelligence artifact
 - `06_governance/candidate_promotion_governance_v1.md` — governs movement from candidates to knowledge or validated reality
+- `06_governance/production_release_gate_v1.md` — requires Compliance Gate before Production Review and Release for human-data artifacts
 - `06_governance/production_os_audit_closure_v1.md` — closes alignment review gaps before technical implementation
 
 ## Boundary
@@ -30,5 +31,21 @@ Start here:
 Production OS is documentation and process architecture for `bgs_orch`.
 
 It does not approve SQL, DDL, migrations, or automatic writes to `bgs_core`.
+
+## Release Gate
+
+Human-data artifacts follow:
+
+```text
+Feature Ready
+↓
+Compliance Gate
+↓
+Production Review
+↓
+Release
+```
+
+If Compliance Gate is blocked, release is blocked.
 
 Daily Intelligence Report Generator v1 remains in `05_intelligence/` while it is an intelligence architecture spec. A separate workflow design under `07_automation/02_workflows/` should only be created after implementation approval.

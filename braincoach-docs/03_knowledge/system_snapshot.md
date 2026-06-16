@@ -134,6 +134,12 @@ Current Focus:
 
 SELF_LEARNING_CAPABILITY
 
+Positioning Update 2026-06-16:
+
+BrainCoach now uses Trajectory Intelligence System as the top-level category.
+
+Self Learning Capability remains a key mechanism-level object, not the top-level market category.
+
 ---
 
 # Core Object
@@ -147,6 +153,26 @@ Ability to independently acquire new knowledge, skills, and competencies without
 Core Question:
 
 Can a person encounter a new problem and organize learning independently?
+
+---
+
+# Current Positioning Hierarchy
+
+Category:
+
+Trajectory Intelligence System
+
+Research Object:
+
+Trajectory Development
+
+Mechanism Layer:
+
+Learning Intelligence
+
+Sub-object:
+
+Self Learning Capability
 
 ---
 
@@ -211,11 +237,19 @@ Intellectual Roots:
 
 Research Object:
 
-RESEARCH_SELF_LEARNING
+TRAJECTORY_DEVELOPMENT
+
+Mechanism Layer:
+
+LEARNING_INTELLIGENCE
+
+Sub-object:
+
+SELF_LEARNING_CAPABILITY
 
 Current Research Question:
 
-How does Self Learning Capability emerge and develop?
+Why do children with similar opportunities achieve different outcomes?
 
 Research Assets:
 
@@ -262,15 +296,29 @@ Key Registries:
 
 # Marketing Positioning
 
+Category:
+
+Trajectory Intelligence System
+
+Who We Serve:
+
+Families pursuing competitive educational and athletic trajectories.
+
+Core Market Question:
+
+We invested so much.
+
+Why didn't it work?
+
 Main Transformation
 
 From:
 
-Child learns only under supervision
+Families discover too late that opportunity did not become results
 
 To:
 
-Child independently masters complex knowledge and skills
+Families see the signals, risks, and trajectory patterns long before final results appear
 
 ---
 

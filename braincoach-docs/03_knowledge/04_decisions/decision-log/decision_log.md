@@ -1,3 +1,47 @@
+## DEC-018 BrainCoach Compliance Gate v1
+
+Date: 2026-06-16
+
+Decision:
+
+BrainCoach adopts Compliance Gate v1 as a mandatory development standard before creating any new product, bot, site, form, workflow, AI-agent, or data-collecting MVP.
+
+Any new BrainCoach system that receives user data is treated as a user data processing system by default.
+
+Before implementation and launch, the team must explicitly document:
+
+- collected data types;
+- user consent flow;
+- physical and logical storage;
+- use of PostgreSQL BGS Core or other storage;
+- third-party services;
+- external AI data transfer;
+- anonymization or pseudonymization requirements;
+- deletion or history anonymization procedure;
+- rules for public materials.
+
+Minimum MVP rule:
+
+1. Privacy Policy exists.
+2. Privacy Policy link is shown in the bot, site, form, or workflow entry point.
+3. User gives consent before the first question or data collection step.
+4. Consent fact is saved.
+5. Data is anonymized before external AI by default.
+6. Deletion or anonymization procedure is documented.
+
+Launch is blocked if user data is collected without consent capture, Privacy Policy reference, or external AI anonymization review.
+
+Status:
+
+Accepted
+
+Related:
+
+* Compliance Gate v1
+* DEC-008 BGS Data Architecture
+* DEC-014 BGS Core MVP v1
+* DEC-016 BGS Database Boundary: Core vs Orch
+
 ## DEC-017 BGS Orch Schema Segregation
 
 Date: 2026-06-14

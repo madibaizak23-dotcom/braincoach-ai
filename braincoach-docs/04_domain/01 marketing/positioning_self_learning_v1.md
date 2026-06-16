@@ -1,10 +1,41 @@
 # POSITIONING_SELF_LEARNING_V1
 
-Status: Active
+Status: Legacy / Mechanism Layer
 
 Layer: 04_domain/marketing
 
 Version: 1.0
+
+---
+
+# Current Role
+
+This document is retained as the Self Learning Capability positioning artifact.
+
+It is no longer the top-level BrainCoach positioning.
+
+Current hierarchy:
+
+Category:
+
+Trajectory Intelligence System
+
+Research Object:
+
+Trajectory Development
+
+Mechanism Layer:
+
+Learning Intelligence
+
+Sub-object:
+
+Self Learning Capability
+
+Top-level positioning is maintained in:
+
+* `braincoach-docs/04_domain/01 marketing/08_POSITIONING.md`
+* `braincoach-docs/04_domain/01 marketing/POSITIONING_SUMMARY.md`
 
 ---
 

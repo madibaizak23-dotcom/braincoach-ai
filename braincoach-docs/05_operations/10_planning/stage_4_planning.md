@@ -27,11 +27,32 @@ Closure documents now define the missing bridge between Signal Candidate and Kno
 * `braincoach-docs/07_automation/production_os/05_intelligence/signal_aggregation_layer_v1.md`
 * `braincoach-docs/07_automation/production_os/05_intelligence/weekly_intelligence_report_v1.md`
 
+Market Discovery has also evolved.
+
+Current top-level positioning:
+
+* Category: Trajectory Intelligence System
+* Research Object: Trajectory Development
+* Mechanism Layer: Learning Intelligence
+* Sub-object: Self Learning Capability
+
+Current market hypothesis:
+
+Competitive Trajectory Families - families investing significant resources into educational, athletic, academic, or long-term achievement trajectories who fear that opportunity will not become long-term results.
+
+Market Discovery source:
+
+`braincoach-docs/05_operations/10_planning/market_discovery_v1.md`
+
 ---
 
 ## Goal
 
 Build the Analytics & Intelligence Layer on top of the Stage 3 intake pipeline. Transform raw signal candidates into aggregated insights, detected patterns, and periodic research reports.
+
+Strategic business goal:
+
+Support Market Discovery and Offer Discovery by identifying early trajectory signals, risks, and patterns that explain why similar opportunities produce different outcomes.
 
 ---
 
@@ -344,7 +365,10 @@ When Stage 4 completes, update:
 * `05_operations/reviews/stage_4_completion_report.md`
 * `03_knowledge/04_decisions/system_evolution_log.md`
 * `03_knowledge/system_snapshot.md`
+* `05_operations/10_planning/market_discovery_v1.md`
 * `07_automation/04_postgres/postgres-schema.md`
 * `07_automation/03_n8n/BrainCoach_GPS_OS_v1.md`
 * Relevant workflow specs in `07_automation/02_workflows/`
+* `04_domain/products/parent_segments_v1.md`
+* `05_operations/10_planning/offer_discovery_v1.md`
 

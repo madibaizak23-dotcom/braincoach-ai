@@ -4,6 +4,12 @@ Status: MVP Ready
 
 Date: 2026-06-12
 
+Last Updated: 2026-06-16
+
+Current Version:
+
+Summer Map v1.1 - Interview to GPS Conversion Optimization
+
 ## Workflow Export
 
 Authoritative export:
@@ -12,11 +18,11 @@ Authoritative export:
 
 Workflow name:
 
-`BrainCoach Summer Map v1 MVP`
+`BrainCoach Summer Map v1.1 MVP`
 
 Node count:
 
-19
+21
 
 Primary processing node:
 
@@ -44,10 +50,10 @@ No new top-level directories or new repository sections were created.
 | Answer Q1 | `sm:q1:1..4` | Saves answer and moves to Q2. |
 | Answer Q2 | `sm:q2:1..4` | Saves answer and moves to Q3. |
 | Answer Q3 | `sm:q3:1..4` | Saves answer and moves to Q4. |
-| Answer Q4 | `sm:q4:1..4` | Saves answer, completes interview, calculates result, shows GPS offer. |
-| GPS interest | `sm:gps` | Logs tracker click and keeps conversation completed. |
-| Share | `sm:share` | Logs referral click and returns share link. |
-| Text during question | Any text while waiting for Q1-Q4 | Logs invalid input and repeats current question. |
+| Answer Q4 | `sm:q4:1..4` | Saves behavioural day-initiation answer and moves to Q5. |
+| Answer Q5 | `sm:q5:1..4` | Saves future-projection answer, completes interview, shows GPS CTA. |
+| GPS CTA | `sm:gps` | Logs `gps_cta_clicked` and returns the BrainCoach GPS URL button. |
+| Text during question | Any text while waiting for Q1-Q5 | Logs invalid input and repeats current question. |
 | Voice input | Telegram voice message | Transcribes voice and joins the same normalized text path. |
 
 ## Callback Data
@@ -71,10 +77,13 @@ Supported callbacks:
 * `sm:q4:2`
 * `sm:q4:3`
 * `sm:q4:4`
+* `sm:q5:1`
+* `sm:q5:2`
+* `sm:q5:3`
+* `sm:q5:4`
 * `sm:gps`
-* `sm:share`
 
-The code also recognizes `sm:restart`; no visible restart button is part of MVP v1.
+The code also recognizes `sm:restart`; no visible restart button is part of MVP v1.1.
 
 ## Stage Machine
 
@@ -85,9 +94,41 @@ Conversation stages:
 * `waiting_q2`
 * `waiting_q3`
 * `waiting_q4`
+* `waiting_q5`
 * `completed`
 
-Q4 transitions directly to `completed`.
+Q4 transitions to `waiting_q5`; Q5 transitions to `completed`.
+
+Database constraint:
+
+`conversations.chk_conversation_stage` must include `waiting_q5`.
+
+Applied in BGS Core:
+
+```bash
+gcloud sql connect n8n-db-instance \
+  --user=bgs_admin \
+  --database=bgs_core
+```
+
+Migration file:
+
+`braincoach-docs/07_automation/04_postgres/005_summer_map_v1_1_conversation_stage.sql`
+
+Verified constraint:
+
+```text
+CHECK ((current_stage = ANY (ARRAY[
+  'new',
+  'waiting_q1',
+  'waiting_q2',
+  'waiting_q3',
+  'waiting_q4',
+  'waiting_q5',
+  'analysis',
+  'completed'
+])))
+```
 
 ## Screen Routing
 
@@ -100,8 +141,8 @@ Q4 transitions directly to `completed`.
 | `sm:q2:*` | `q2` |
 | `sm:q3:*` | `q3` |
 | `sm:q4:*` | `q4` |
-| `sm:gps` | `offer` |
-| `sm:share` | `share` |
+| `sm:q5:*` | `q5` |
+| `sm:gps` after completion | `gps` |
 | `current_stage = completed` or `route = result` | `result` |
 | `route = gps` | `gps` |
 | otherwise | `fallback` |
@@ -113,7 +154,9 @@ Telegram send nodes:
 * `TG_Q2`
 * `TG_Q3`
 * `TG_Q4`
+* `TG_Q5`
 * `TG_Result`
+* `TG_GPS`
 
 ## PostgreSQL Dependencies
 
@@ -125,6 +168,10 @@ Existing BGS Core tables used by MVP v1:
 * `interview_responses`
 * `conversation_events`
 * `messages`
+
+Schema dependency for v1.1:
+
+* `conversations.current_stage` check constraint must allow `waiting_q5`.
 
 Tables intentionally not required in the MVP path:
 
@@ -143,41 +190,51 @@ Key event names:
 * `question_2_answered`
 * `question_3_answered`
 * `question_4_answered`
+* `question_5_answered`
 * `summer_result_generated`
 * `summer_result_shown`
-* `tracker_offer_shown`
-* `tracker_button_clicked`
-* `referral_clicked`
+* `gps_cta_shown`
+* `gps_cta_clicked`
 * `summer_map_invalid_input`
 * `summer_map_duplicate_click`
 * `summer_map_unexpected_callback`
 
+Future GPS-side funnel events required for full reporting:
+
+* `gps_started`
+* `first_tracker_entry`
+* `day_3_active`
+* `day_7_active`
+
 ## BrainCoach GPS Transition
 
-The MVP uses two GPS-related paths:
+The MVP v1.1 uses a measured GPS handoff:
 
-* In-workflow callback: `sm:gps`, logged as `tracker_button_clicked`.
-* Telegram URL handoff from result screen: `https://t.me/BrainCoach_GPS_bot?start=summer_map`.
+* Completion screen shows one visible CTA: `🚀 Перейти в BrainCoach GPS`.
+* CTA uses callback `sm:gps` so Summer Map can log `gps_cta_clicked`.
+* After the click, the bot returns one URL button to `https://t.me/BrainCoach_GPS_bot?start=summer_map`.
 
 For GPS onboarding, the receiving bot should treat `start=summer_map` as the source attribution for the Summer Map pilot.
 
 ## Recommended Next Steps for GPS Onboarding
 
 1. Confirm the receiving `BrainCoach_GPS_bot` start parameter contract for `start=summer_map`.
-2. Add source attribution in GPS onboarding persistence: `source = summer_map`, `campaign = summer_2026_pilot`.
-3. Preserve the Summer Map `telegram_user_id` mapping through `persons.external_id`.
-4. Define conversion events in `conversation_events` or the GPS workflow equivalent before launch.
-5. Run an end-to-end test: Summer Map result -> GPS URL -> GPS onboarding first screen -> application captured.
+2. Log `gps_started` when GPS bot receives `/start summer_map`.
+3. Log `first_tracker_entry` when the first observation is saved.
+4. Add Day 3 and Day 7 activity events for retention reporting.
+5. Preserve the Summer Map `telegram_user_id` mapping through `persons.external_id`.
+6. Run an end-to-end test: Summer Map result -> GPS CTA -> GPS URL -> GPS onboarding first screen -> first observation captured.
 
 ## Commit Summary
 
 Suggested commit message:
 
-`docs: capture Summer Map MVP v1 release state`
+`feat: optimize Summer Map GPS conversion funnel`
 
 Suggested commit body:
 
-* Save current Summer Map MVP n8n export.
-* Add Summer Map MVP release note to the release registry.
-* Add operational test report for the MVP pilot.
-* Add runtime implementation state with Telegram callbacks, screen routing, PostgreSQL dependencies, and GPS handoff.
+* Add behavioural Q4 and future-projection Q5.
+* Replace diagnostic completion output with GPS activation message.
+* Use one visible GPS CTA.
+* Log `gps_cta_shown` and `gps_cta_clicked`.
+* Update runtime documentation for Summer Map v1.1.

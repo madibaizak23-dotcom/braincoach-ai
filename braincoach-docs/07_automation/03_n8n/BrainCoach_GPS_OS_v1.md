@@ -18,6 +18,28 @@ BrainCoach GPS OS — персональная Knowledge OS для фиксац�
 
 ---
 
+## Positioning Alignment
+
+Current BrainCoach category:
+
+Trajectory Intelligence System
+
+Research Object:
+
+Trajectory Development
+
+Mechanism Layer:
+
+Learning Intelligence
+
+Sub-object:
+
+Self Learning Capability
+
+GPS is the operational capture and intelligence interface for observing trajectory signals over time.
+
+---
+
 ## Версия
 
 Version: MVP-1 bgs_core adapted

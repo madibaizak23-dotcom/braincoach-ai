@@ -32,13 +32,24 @@ BrainCoach GPS may require a trajectory intelligence layer that interprets human
 
 This thesis is not accepted ontology. It is a working synthesis for further research and GPS product design.
 
+## Positioning Alignment
+
+Current hierarchy:
+
+- Category: Trajectory Intelligence System
+- Research Object: Trajectory Development
+- Mechanism Layer: Learning Intelligence
+- Sub-object: Self Learning Capability
+
+GPS trajectory intelligence is the intelligence expression of this hierarchy inside the product system.
+
 ## Relationship To Existing Intelligence
 
 ### Self Learning Capability
 
-Self Learning Capability remains the central intelligence object.
+Self Learning Capability remains a key mechanism-level intelligence object.
 
-GPS trajectory intelligence should not replace it. It may describe how Self Learning Capability appears over time as movement from external management toward self-directed development.
+GPS trajectory intelligence should not replace it. It describes how Self Learning Capability appears over time as one mechanism inside broader trajectory development.
 
 ### External Management Dependency
 
@@ -194,4 +205,3 @@ Do not use this document for:
 3. Distinguish dissonance from contradiction and deviation.
 4. Define boundary/filter signals.
 5. Reconcile lifecycle nodes with existing ontology.
-

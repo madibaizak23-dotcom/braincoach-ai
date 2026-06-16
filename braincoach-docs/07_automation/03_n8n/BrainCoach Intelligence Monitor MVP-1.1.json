@@ -1,0 +1,189 @@
+﻿{
+    "updatedAt":  "2026-06-15T12:55:39.854Z",
+    "createdAt":  "2026-06-15T12:55:39.854Z",
+    "id":  "RiH0FZ38xNEJHJ8s",
+    "name":  "BrainCoach Intelligence Monitor MVP-1.1",
+    "description":  null,
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH params AS (\n  SELECT\n    now() AS run_at,\n    date_trunc(\u0027day\u0027, now()) AS day_start,\n    now() - interval \u002724 hours\u0027 AS since_24h,\n    now() - interval \u00276 hours\u0027 AS stuck_before\n),\nparticipant_entry_counts AS (\n  SELECT\n    te.person_id,\n    count(*) AS entry_count,\n    min(te.created_at) AS first_entry_at\n  FROM tracker_entries te\n  WHERE te.person_id IS NOT NULL\n  GROUP BY te.person_id\n),\naudience_summary AS (\n  SELECT\n    (SELECT count(*) FROM participant_entry_counts) AS unique_participants,\n    (SELECT count(*) FROM participant_entry_counts, params WHERE first_entry_at \u003e= params.day_start) AS new_participants_today,\n    (\n      SELECT jsonb_build_object(\n        \u0027participant\u0027,\n        coalesce(nullif(trim(p.first_name), \u0027\u0027), pec.person_id::text),\n        \u0027person_id\u0027,\n        pec.person_id::text,\n        \u0027entries\u0027,\n        pec.entry_count\n      )\n      FROM participant_entry_counts pec\n      LEFT JOIN persons p ON p.person_id = pec.person_id\n      ORDER BY pec.entry_count DESC, pec.first_entry_at ASC\n      LIMIT 1\n    ) AS most_active_participant,\n    (SELECT round(avg(entry_count)::numeric, 1) FROM participant_entry_counts) AS avg_entries_per_participant\n),\ndata_intake AS (\n  SELECT\n    (SELECT count(*) FROM tracker_entries) AS tracker_entries_total,\n    (SELECT count(*) FROM tracker_entries, params WHERE tracker_entries.created_at \u003e= params.day_start) AS tracker_entries_today,\n    (SELECT count(*) FROM tracker_entries, params WHERE tracker_entries.created_at \u003e= params.since_24h) AS tracker_entries_last_24h,\n    (SELECT count(*) FROM observations) AS observations_total,\n    (SELECT count(*) FROM observations, params WHERE observations.created_at \u003e= params.day_start) AS observations_today,\n    (SELECT count(*) FROM research_signal_candidates) AS signal_candidates_total,\n    (SELECT count(*) FROM research_signal_candidates, params WHERE research_signal_candidates.created_at \u003e= params.day_start) AS signal_candidates_today\n),\ninterview_funnel AS (\n  SELECT\n    (SELECT count(*) FROM parent_interviews) AS parent_interviews_total,\n    (SELECT count(*) FROM parent_interviews WHERE status = \u0027started\u0027) AS started,\n    (SELECT count(*) FROM parent_interviews WHERE status = \u0027in_progress\u0027) AS in_progress,\n    (SELECT count(*) FROM parent_interviews WHERE status = \u0027completed\u0027) AS completed,\n    (SELECT count(*) FROM parent_interviews WHERE status = \u0027abandoned\u0027) AS abandoned\n),\nstage_counts AS (\n  SELECT jsonb_object_agg(stage_name, stage_count ORDER BY stage_order) AS active_conversations_by_stage\n  FROM (\n    SELECT\n      v.stage_order,\n      v.stage_name,\n      count(c.conversation_id) AS stage_count\n    FROM (VALUES\n      (1,\u0027new\u0027),\n      (2,\u0027waiting_q1\u0027),\n      (3,\u0027waiting_q2\u0027),\n      (4,\u0027waiting_q3\u0027),\n      (5,\u0027waiting_q4\u0027),\n      (6,\u0027analysis\u0027),\n      (7,\u0027completed\u0027)\n    ) AS v(stage_order, stage_name)\n    LEFT JOIN conversations c ON c.current_stage = v.stage_name AND c.status = \u0027active\u0027\n    GROUP BY v.stage_order, v.stage_name\n  ) s\n),\nobservation_quality AS (\n  SELECT\n    (SELECT count(*) FROM observations) AS observations_total,\n    (SELECT count(*) FROM research_signal_candidates) AS signal_candidates_total,\n    CASE\n      WHEN (SELECT count(*) FROM observations) = 0 THEN 0\n      ELSE round(((SELECT count(*) FROM research_signal_candidates)::numeric / (SELECT count(*) FROM observations)::numeric) * 100, 1)\n    END AS observation_signal_conversion_pct\n),\ntop_today AS (\n  SELECT coalesce(jsonb_agg(jsonb_build_object(\u0027signal_name\u0027, signal_name, \u0027count\u0027, signal_count) ORDER BY signal_count DESC), \u0027[]\u0027::jsonb) AS top_signal_name_today\n  FROM (\n    SELECT coalesce(signal_name, \u0027unknown\u0027) AS signal_name, count(*) AS signal_count\n    FROM research_signal_candidates, params\n    WHERE research_signal_candidates.created_at \u003e= params.day_start\n    GROUP BY coalesce(signal_name, \u0027unknown\u0027)\n    ORDER BY signal_count DESC\n    LIMIT 5\n  ) x\n),\ntop_all AS (\n  SELECT coalesce(jsonb_agg(jsonb_build_object(\u0027signal_name\u0027, signal_name, \u0027count\u0027, signal_count) ORDER BY signal_count DESC), \u0027[]\u0027::jsonb) AS top_signal_name_all_time\n  FROM (\n    SELECT coalesce(signal_name, \u0027unknown\u0027) AS signal_name, count(*) AS signal_count\n    FROM research_signal_candidates\n    GROUP BY coalesce(signal_name, \u0027unknown\u0027)\n    ORDER BY signal_count DESC\n    LIMIT 5\n  ) x\n),\nstatus_counts AS (\n  SELECT coalesce(jsonb_object_agg(status_name, status_count), \u0027{}\u0027::jsonb) AS candidate_status_counts\n  FROM (\n    SELECT coalesce(status, \u0027unknown\u0027) AS status_name, count(*) AS status_count\n    FROM research_signal_candidates\n    GROUP BY coalesce(status, \u0027unknown\u0027)\n  ) x\n),\nsignal_summary AS (\n  SELECT\n    (SELECT top_signal_name_today FROM top_today) AS top_signal_name_today,\n    (SELECT top_signal_name_all_time FROM top_all) AS top_signal_name_all_time,\n    (SELECT round(avg(confidence)::numeric, 3) FROM research_signal_candidates WHERE confidence IS NOT NULL) AS average_confidence,\n    (SELECT count(*) FROM research_signal_candidates WHERE confidence IS NOT NULL AND confidence \u003c 0.5) AS low_confidence_count,\n    (SELECT candidate_status_counts FROM status_counts) AS candidate_status_counts\n),\ntop_contributors AS (\n  SELECT coalesce(jsonb_agg(jsonb_build_object(\n    \u0027participant\u0027,\n    participant,\n    \u0027person_id\u0027,\n    person_id,\n    \u0027count\u0027,\n    entry_count\n  ) ORDER BY entry_count DESC), \u0027[]\u0027::jsonb) AS contributors\n  FROM (\n    SELECT\n      coalesce(nullif(trim(p.first_name), \u0027\u0027), pec.person_id::text) AS participant,\n      pec.person_id::text AS person_id,\n      pec.entry_count\n    FROM participant_entry_counts pec\n    LEFT JOIN persons p ON p.person_id = pec.person_id\n    ORDER BY pec.entry_count DESC, pec.first_entry_at ASC\n    LIMIT 5\n  ) x\n),\nparticipant_distribution AS (\n  SELECT\n    count(*) FILTER (WHERE entry_count = 1) AS participants_with_1_entry,\n    count(*) FILTER (WHERE entry_count BETWEEN 2 AND 5) AS participants_with_2_5_entries,\n    count(*) FILTER (WHERE entry_count \u003e 5) AS participants_with_gt_5_entries\n  FROM participant_entry_counts\n),\nbottlenecks AS (\n  SELECT\n    (SELECT count(*) FROM observations o LEFT JOIN research_signal_candidates r ON r.observation_id = o.observation_id WHERE r.candidate_id IS NULL) AS observations_without_signal_candidates,\n    (SELECT count(*) FROM research_signal_candidates WHERE observation_id IS NULL) AS signal_candidates_without_observation_id,\n    (SELECT count(*) FROM conversations, params WHERE status = \u0027active\u0027 AND current_stage IN (\u0027new\u0027,\u0027waiting_q1\u0027,\u0027waiting_q2\u0027,\u0027waiting_q3\u0027,\u0027waiting_q4\u0027,\u0027analysis\u0027) AND coalesce(stage_updated_at, started_at) \u003c params.stuck_before) AS conversations_stuck_over_6h,\n    (SELECT count(*) FROM parent_interviews pi WHERE pi.status IN (\u0027started\u0027,\u0027in_progress\u0027) AND NOT EXISTS (SELECT 1 FROM interview_responses ir WHERE ir.interview_id = pi.interview_id)) AS interviews_started_no_responses,\n    (SELECT count(*) FROM conversation_events, params WHERE conversation_events.created_at \u003e= params.day_start AND (event_type = \u0027error\u0027 OR event_payload::text ILIKE \u0027%error%\u0027)) AS errors_today\n),\nrepeated_themes AS (\n  SELECT coalesce(jsonb_agg(jsonb_build_object(\u0027theme\u0027, signal_name, \u0027count\u0027, signal_count) ORDER BY signal_count DESC), \u0027[]\u0027::jsonb) AS themes\n  FROM (\n    SELECT coalesce(signal_name, \u0027unknown\u0027) AS signal_name, count(*) AS signal_count\n    FROM research_signal_candidates, params\n    WHERE research_signal_candidates.created_at \u003e= params.since_24h\n    GROUP BY coalesce(signal_name, \u0027unknown\u0027)\n    HAVING count(*) \u003e 1\n    ORDER BY signal_count DESC\n    LIMIT 5\n  ) x\n),\nemerging_behaviors AS (\n  SELECT coalesce(jsonb_agg(jsonb_build_object(\u0027behavior\u0027, signal_name, \u0027count\u0027, signal_count) ORDER BY signal_count DESC), \u0027[]\u0027::jsonb) AS behaviors\n  FROM (\n    SELECT coalesce(signal_name, \u0027unknown\u0027) AS signal_name, count(*) AS signal_count\n    FROM research_signal_candidates, params\n    WHERE research_signal_candidates.created_at \u003e= params.since_24h\n    GROUP BY coalesce(signal_name, \u0027unknown\u0027)\n    HAVING count(*) \u003e 1\n    ORDER BY signal_count DESC\n    LIMIT 5\n  ) x\n),\nreflection_coach_metrics AS (\n  SELECT\n    false AS tracked,\n    NULL::integer AS confirmations_sent,\n    NULL::integer AS questions_sent,\n    NULL::integer AS missions_sent,\n    NULL::integer AS deep_reflections_sent\n)\nSELECT\n  params.run_at,\n  jsonb_build_object(\n    \u0027unique_participants\u0027, audience_summary.unique_participants,\n    \u0027new_participants_today\u0027, audience_summary.new_participants_today,\n    \u0027most_active_participant\u0027, audience_summary.most_active_participant,\n    \u0027avg_entries_per_participant\u0027, audience_summary.avg_entries_per_participant\n  ) AS audience_summary,\n  jsonb_build_object(\n    \u0027tracker_entries_total\u0027, data_intake.tracker_entries_total,\n    \u0027tracker_entries_today\u0027, data_intake.tracker_entries_today,\n    \u0027tracker_entries_last_24h\u0027, data_intake.tracker_entries_last_24h,\n    \u0027observations_total\u0027, data_intake.observations_total,\n    \u0027observations_today\u0027, data_intake.observations_today,\n    \u0027signal_candidates_total\u0027, data_intake.signal_candidates_total,\n    \u0027signal_candidates_today\u0027, data_intake.signal_candidates_today\n  ) AS data_intake,\n  jsonb_build_object(\n    \u0027parent_interviews_total\u0027, interview_funnel.parent_interviews_total,\n    \u0027started\u0027, interview_funnel.started,\n    \u0027in_progress\u0027, interview_funnel.in_progress,\n    \u0027completed\u0027, interview_funnel.completed,\n    \u0027abandoned\u0027, interview_funnel.abandoned,\n    \u0027active_conversations_by_stage\u0027, stage_counts.active_conversations_by_stage\n  ) AS interview_funnel,\n  jsonb_build_object(\n    \u0027observations_total\u0027, observation_quality.observations_total,\n    \u0027signal_candidates_total\u0027, observation_quality.signal_candidates_total,\n    \u0027observation_signal_conversion_pct\u0027, observation_quality.observation_signal_conversion_pct\n  ) AS observation_quality,\n  jsonb_build_object(\n    \u0027top_signal_name_today\u0027, signal_summary.top_signal_name_today,\n    \u0027top_signal_name_all_time\u0027, signal_summary.top_signal_name_all_time,\n    \u0027average_confidence\u0027, signal_summary.average_confidence,\n    \u0027low_confidence_count\u0027, signal_summary.low_confidence_count,\n    \u0027candidate_status_counts\u0027, signal_summary.candidate_status_counts\n  ) AS signal_summary,\n  top_contributors.contributors AS top_contributors,\n  jsonb_build_object(\n    \u0027participants_with_1_entry\u0027, participant_distribution.participants_with_1_entry,\n    \u0027participants_with_2_5_entries\u0027, participant_distribution.participants_with_2_5_entries,\n    \u0027participants_with_gt_5_entries\u0027, participant_distribution.participants_with_gt_5_entries\n  ) AS participant_distribution,\n  jsonb_build_object(\n    \u0027observations_without_signal_candidates\u0027, bottlenecks.observations_without_signal_candidates,\n    \u0027signal_candidates_without_observation_id\u0027, bottlenecks.signal_candidates_without_observation_id,\n    \u0027conversations_stuck_over_6h\u0027, bottlenecks.conversations_stuck_over_6h,\n    \u0027interviews_started_no_responses\u0027, bottlenecks.interviews_started_no_responses,\n    \u0027errors_today\u0027, bottlenecks.errors_today\n  ) AS bottlenecks,\n  emerging_behaviors.behaviors AS emerging_behaviors,\n  repeated_themes.themes AS repeated_themes,\n  jsonb_build_object(\n    \u0027tracked\u0027, reflection_coach_metrics.tracked,\n    \u0027confirmations_sent\u0027, reflection_coach_metrics.confirmations_sent,\n    \u0027questions_sent\u0027, reflection_coach_metrics.questions_sent,\n    \u0027missions_sent\u0027, reflection_coach_metrics.missions_sent,\n    \u0027deep_reflections_sent\u0027, reflection_coach_metrics.deep_reflections_sent\n  ) AS reflection_coach_metrics\nFROM params\nCROSS JOIN audience_summary\nCROSS JOIN data_intake\nCROSS JOIN interview_funnel\nCROSS JOIN stage_counts\nCROSS JOIN observation_quality\nCROSS JOIN signal_summary\nCROSS JOIN top_contributors\nCROSS JOIN participant_distribution\nCROSS JOIN bottlenecks\nCROSS JOIN emerging_behaviors\nCROSS JOIN repeated_themes\nCROSS JOIN reflection_coach_metrics;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -1072,
+                                       320
+                                   ],
+                      "id":  "0a9b29f4-0f18-4f8b-a507-53f9cfda0003",
+                      "name":  "DB_ReadIntelligenceSnapshot",
+                      "alwaysOutputData":  true,
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "bzBI7dsjLbTrWIIp",
+                                                           "name":  "POSTGRES | BGS_CORE"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const row = $input.first().json;\n\nconst audience = row.audience_summary || {};\nconst data = row.data_intake || {};\nconst funnel = row.interview_funnel || {};\nconst quality = row.observation_quality || {};\nconst signals = row.signal_summary || {};\nconst topContributors = Array.isArray(row.top_contributors) ? row.top_contributors : [];\nconst distribution = row.participant_distribution || {};\nconst bottlenecks = row.bottlenecks || {};\nconst behaviors = Array.isArray(row.emerging_behaviors) ? row.emerging_behaviors : [];\nconst themes = Array.isArray(row.repeated_themes) ? row.repeated_themes : [];\nconst reflection = row.reflection_coach_metrics || {};\n\nfunction n(value) {\n  return value === null || value === undefined ? 0 : Number(value);\n}\n\nfunction display(value) {\n  return String(value ?? \u0027unknown\u0027)\n    .replace(/_/g, \u0027 \u0027)\n    .replace(/[\\r\\n]+/g, \u0027 \u0027)\n    .replace(/[\\*[\\]]/g, \u0027\u0027)\n    .trim();\n}\n\nfunction listTop(items, labelKey = \u0027signal_name\u0027, limit = 3) {\n  if (!Array.isArray(items) || items.length === 0) return \u0027none\u0027;\n  return items\n    .slice(0, limit)\n    .map(item =\u003e display(item[labelKey] || item.theme || item.behavior || \u0027unknown\u0027) + \u0027 (\u0027 + item.count + \u0027)\u0027)\n    .join(\u0027, \u0027);\n}\n\nfunction numberedContributors(items) {\n  if (!Array.isArray(items) || items.length === 0) return [\u0027- none\u0027];\n  return items.slice(0, 5).map((item, index) =\u003e\n    (index + 1) + \u0027. \u0027 + display(item.participant || item.person_id) + \u0027 — \u0027 + n(item.count)\n  );\n}\n\nfunction statusLine(statusCounts) {\n  if (!statusCounts || Object.keys(statusCounts).length === 0) return \u0027none\u0027;\n  return Object.entries(statusCounts).map(([key, value]) =\u003e display(key) + \u0027: \u0027 + value).join(\u0027, \u0027);\n}\n\nfunction stageLine(stageCounts) {\n  const stages = [\u0027new\u0027,\u0027waiting_q1\u0027,\u0027waiting_q2\u0027,\u0027waiting_q3\u0027,\u0027waiting_q4\u0027,\u0027analysis\u0027,\u0027completed\u0027];\n  const counts = stageCounts || {};\n  return stages.map(stage =\u003e display(stage) + \u0027: \u0027 + (counts[stage] ?? 0)).join(\u0027, \u0027);\n}\n\nfunction percent(value) {\n  const num = Number(value);\n  if (!Number.isFinite(num)) return \u00270%\u0027;\n  return Math.round(num) + \u0027%\u0027;\n}\n\nfunction mostActiveLine(value) {\n  if (!value || !value.participant) return \u0027none\u0027;\n  return display(value.participant) + \u0027 (\u0027 + n(value.entries) + \u0027)\u0027;\n}\n\nfunction reflectionLines(metrics) {\n  if (!metrics.tracked) return [\u0027- Reflection metrics not yet tracked.\u0027];\n  return [\n    \u0027- confirmations sent: \u0027 + n(metrics.confirmations_sent),\n    \u0027- questions sent: \u0027 + n(metrics.questions_sent),\n    \u0027- missions sent: \u0027 + n(metrics.missions_sent),\n    \u0027- deep reflections sent: \u0027 + n(metrics.deep_reflections_sent)\n  ];\n}\n\nfunction getChatId() {\n  try {\n    return $(\u0027Telegram Trigger\u0027).first().json.message.chat.id;\n  } catch (e) {\n    return 300628321;\n  }\n}\n\nconst behaviorSource = behaviors.length \u003e 0 ? behaviors : themes;\nconst behaviorSubtitle = behaviors.length \u003e 0 ? \u0027\u0027 : \u0027(raw observation patterns)\u0027;\nconst behaviorLine = listTop(behaviorSource, behaviors.length \u003e 0 ? \u0027behavior\u0027 : \u0027theme\u0027, 5);\n\nconst bottleneckPairs = Object.entries(bottlenecks).map(([key, value]) =\u003e [key, n(value)]).sort((a, b) =\u003e b[1] - a[1]);\nconst mainBottleneck = bottleneckPairs.find(([, value]) =\u003e value \u003e 0);\nconst mainBottleneckText = mainBottleneck ? display(mainBottleneck[0]) + \u0027: \u0027 + mainBottleneck[1] : \u0027no visible bottleneck\u0027;\n\nconst lines = [\n  \u0027BrainCoach Intelligence Monitor MVP-1.1\u0027,\n  new Date().toISOString(),\n  \u0027\u0027,\n  \u00270. Audience Summary\u0027,\n  \u0027- unique participants: \u0027 + n(audience.unique_participants),\n  \u0027- new participants today: \u0027 + n(audience.new_participants_today),\n  \u0027- most active participant: \u0027 + mostActiveLine(audience.most_active_participant),\n  \u0027- avg entries per participant: \u0027 + (audience.avg_entries_per_participant ?? \u00270\u0027),\n  \u0027\u0027,\n  \u00271. Data Intake Summary\u0027,\n  \u0027- tracker_entries total: \u0027 + n(data.tracker_entries_total),\n  \u0027- tracker_entries today: \u0027 + n(data.tracker_entries_today),\n  \u0027- tracker_entries last 24h: \u0027 + n(data.tracker_entries_last_24h),\n  \u0027- observations total: \u0027 + n(data.observations_total),\n  \u0027- observations today: \u0027 + n(data.observations_today),\n  \u0027- signal_candidates total: \u0027 + n(data.signal_candidates_total),\n  \u0027- signal_candidates today: \u0027 + n(data.signal_candidates_today),\n  \u0027\u0027,\n  \u00272. Interview Funnel\u0027,\n  \u0027- parent_interviews total: \u0027 + n(funnel.parent_interviews_total),\n  \u0027- started: \u0027 + n(funnel.started),\n  \u0027- in_progress: \u0027 + n(funnel.in_progress),\n  \u0027- completed: \u0027 + n(funnel.completed),\n  \u0027- abandoned: \u0027 + n(funnel.abandoned),\n  \u0027- active conversations: \u0027 + stageLine(funnel.active_conversations_by_stage),\n  \u0027\u0027,\n  \u00273. Observation Quality\u0027,\n  \u0027- observations: \u0027 + n(quality.observations_total),\n  \u0027- signal candidates: \u0027 + n(quality.signal_candidates_total),\n  \u0027- conversion: \u0027 + percent(quality.observation_signal_conversion_pct),\n  \u0027\u0027,\n  \u00274. Signal Summary\u0027,\n  \u0027- top signal today: \u0027 + listTop(signals.top_signal_name_today),\n  \u0027- top signal all time: \u0027 + listTop(signals.top_signal_name_all_time),\n  \u0027- average confidence: \u0027 + (signals.average_confidence ?? \u0027n/a\u0027),\n  \u0027- low-confidence count: \u0027 + n(signals.low_confidence_count),\n  \u0027- statuses: \u0027 + statusLine(signals.candidate_status_counts),\n  \u0027\u0027,\n  \u00275. Top Contributors\u0027,\n  ...numberedContributors(topContributors),\n  \u0027\u0027,\n  \u00276. Participant Distribution\u0027,\n  \u0027- participants with 1 entry: \u0027 + n(distribution.participants_with_1_entry),\n  \u0027- participants with 2-5 entries: \u0027 + n(distribution.participants_with_2_5_entries),\n  \u0027- participants with \u003e5 entries: \u0027 + n(distribution.participants_with_gt_5_entries),\n  \u0027\u0027,\n  \u00277. System Bottlenecks\u0027,\n  \u0027- observations without signal candidates: \u0027 + n(bottlenecks.observations_without_signal_candidates),\n  \u0027- signal candidates without observation_id: \u0027 + n(bottlenecks.signal_candidates_without_observation_id),\n  \u0027- conversations stuck \u003e 6h: \u0027 + n(bottlenecks.conversations_stuck_over_6h),\n  \u0027- interviews started but no responses: \u0027 + n(bottlenecks.interviews_started_no_responses),\n  \u0027- errors today: \u0027 + n(bottlenecks.errors_today),\n  \u0027\u0027,\n  \u00278. Emerging Behaviors\u0027,\n  ...(behaviorSubtitle ? [behaviorSubtitle] : []),\n  \u0027- grouped patterns: \u0027 + behaviorLine,\n  \u0027\u0027,\n  \u0027Reflection Coach Metrics\u0027,\n  ...reflectionLines(reflection),\n  \u0027\u0027,\n  \u00279. Daily Intelligence Draft\u0027,\n  \u0027- Today the system is collecting: \u0027 + n(data.tracker_entries_today) + \u0027 tracker entries, \u0027 + n(data.observations_today) + \u0027 observations, \u0027 + n(data.signal_candidates_today) + \u0027 signal candidates.\u0027,\n  \u0027- Audience: \u0027 + n(audience.unique_participants) + \u0027 participants; most active: \u0027 + mostActiveLine(audience.most_active_participant) + \u0027.\u0027,\n  \u0027- Observation quality: \u0027 + percent(quality.observation_signal_conversion_pct) + \u0027 observation to signal conversion.\u0027,\n  \u0027- Emerging behaviors: \u0027 + behaviorLine + \u0027.\u0027,\n  \u0027- Possible bottleneck: \u0027 + mainBottleneckText + \u0027.\u0027,\n  \u0027- Manual review: inspect low-confidence candidates, participant concentration, and observation to signal gaps.\u0027\n];\n\nreturn [{\n  json: {\n    report_text: lines.join(\u0027\\n\u0027),\n    chat_id: getChatId(),\n    run_at: row.run_at,\n    read_only: true\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -784,
+                                       320
+                                   ],
+                      "id":  "0a9b29f4-0f18-4f8b-a507-53f9cfda0004",
+                      "name":  "SYS_FormatTelegramReport"
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "={{ $json.chat_id }}",
+                                         "text":  "={{ $json.report_text }}",
+                                         "additionalFields":  {
+                                                                  "appendAttribution":  false
+                                                              }
+                                     },
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       -496,
+                                       320
+                                   ],
+                      "id":  "0a9b29f4-0f18-4f8b-a507-53f9cfda0005",
+                      "name":  "TG_SendMonitorReport",
+                      "webhookId":  "877ba27c-930d-4831-b190-ce607db4a3a8",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "gahcn5ouPb6HLRcu",
+                                                              "name":  "BrainCoach Intelligence Monitor"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.manualTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1392,
+                                       288
+                                   ],
+                      "id":  "0a9b29f4-0f18-4f8b-a507-53f9cfda0001",
+                      "name":  "TRG_ManualRun"
+                  },
+                  {
+                      "parameters":  {
+                                         "updates":  [
+                                                         "message"
+                                                     ],
+                                         "additionalFields":  {
+
+                                                              }
+                                     },
+                      "type":  "n8n-nodes-base.telegramTrigger",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       -1344,
+                                       608
+                                   ],
+                      "id":  "58411987-6a4b-4589-b235-5de2b9841974",
+                      "name":  "Telegram Trigger",
+                      "webhookId":  "00252734-a80b-4b59-aa4f-e5c72776839c",
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "gahcn5ouPb6HLRcu",
+                                                              "name":  "BrainCoach Intelligence Monitor"
+                                                          }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "DB_ReadIntelligenceSnapshot":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "SYS_FormatTelegramReport",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "SYS_FormatTelegramReport":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "TG_SendMonitorReport",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "TRG_ManualRun":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "DB_ReadIntelligenceSnapshot",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Telegram Trigger":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "DB_ReadIntelligenceSnapshot",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             }
+                    },
+    "settings":  {
+
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  null,
+    "versionId":  "8550188e-2fff-4e36-bf98-fd1a4361d980",
+    "activeVersionId":  null,
+    "versionCounter":  1,
+    "triggerCount":  0,
+    "shared":  [
+                   {
+                       "updatedAt":  "2026-06-15T12:55:39.854Z",
+                       "createdAt":  "2026-06-15T12:55:39.854Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "RiH0FZ38xNEJHJ8s",
+                       "projectId":  "Lb2f1tWAVTiaXpgx",
+                       "project":  {
+                                       "updatedAt":  "2026-06-10T08:21:33.033Z",
+                                       "createdAt":  "2026-06-10T08:01:13.798Z",
+                                       "id":  "Lb2f1tWAVTiaXpgx",
+                                       "name":  "Madi Baizak \u003cmadi.baizak23@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "creatorId":  "bdd1b81e-f407-487b-8d07-adfc3c042c35"
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ],
+    "activeVersion":  null
+}

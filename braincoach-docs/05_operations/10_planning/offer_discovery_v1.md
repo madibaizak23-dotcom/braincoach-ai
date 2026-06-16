@@ -16,7 +16,9 @@ Knowledge Architecture, Research Architecture, Automation Architecture and Regis
 
 Current bottleneck has shifted from knowledge production to offer discovery.
 
-The next objective is to transform Self Learning Capability from a research object into a repeatable and scalable product system.
+The next objective is to transform Trajectory Development and its mechanism layer, Learning Intelligence, into a repeatable and scalable product system.
+
+Self Learning Capability remains a key sub-object and mechanism, but it is no longer the top-level market category.
 
 ---
 
@@ -44,7 +46,49 @@ Parents buy desired outcomes.
 
 # Core Question
 
-How do we transform Self Learning Capability into a repeatable offer that parents are willing to buy?
+How do we transform Trajectory Intelligence into a repeatable offer that families pursuing competitive trajectories are willing to buy?
+
+---
+
+# Current Market Hypothesis
+
+Source:
+
+`braincoach-docs/05_operations/10_planning/market_discovery_v1.md`
+
+Primary segment:
+
+Competitive Trajectory Families
+
+Definition:
+
+Families investing significant resources into educational, athletic, academic, or long-term achievement trajectories.
+
+Core concern:
+
+"We invested so much. Why didn't it work?"
+
+Purchase hypothesis:
+
+Parents are buying:
+
+* reduced risk
+* trajectory stability
+* potential realization
+* protection against lost opportunity
+* confidence that investments convert into results
+
+Market frame:
+
+Lost Opportunity After Investment
+
+Mechanism hypothesis:
+
+Learning Intelligence and Self Learning Capability explain part of why investments do or do not convert into long-term results.
+
+Historical hypothesis:
+
+The previous focus, "smart teenager, visible potential, low realization," remains useful as an observed pattern but is no longer the primary market segment definition.
 
 ---
 
@@ -276,7 +320,13 @@ Market Demand:
 
 Parents are not primarily buying knowledge.
 
-Parents are buying reduction of dependence on external management.
+Parents may not primarily be buying reduction of dependence on external management.
+
+Current stronger hypothesis:
+
+Parents buy confidence that significant investments in competitive trajectories will convert into long-term results.
+
+Reduced dependence on external management is one important mechanism and proof signal inside that broader purchase motive.
 
 Success Criterion:
 

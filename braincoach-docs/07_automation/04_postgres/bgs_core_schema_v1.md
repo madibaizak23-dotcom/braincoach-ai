@@ -77,6 +77,21 @@ persons
 
 Контейнер диалогов.
 
+### Stage Constraint
+
+`chk_conversation_stage` allows:
+
+* `new`
+* `waiting_q1`
+* `waiting_q2`
+* `waiting_q3`
+* `waiting_q4`
+* `waiting_q5`
+* `analysis`
+* `completed`
+
+`waiting_q5` was added for Summer Map v1.1.
+
 ### Relationships
 
 persons

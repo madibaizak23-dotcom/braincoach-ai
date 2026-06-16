@@ -1,7 +1,7 @@
 # PostgreSQL Schema
 
 Status: Active DBA Snapshot
-Last Updated: 2026-06-14
+Last Updated: 2026-06-16
 Database: `braincoach_dev` legacy snapshot, `bgs_core`, `bgs_orch`
 Schema: `public`
 
@@ -119,6 +119,27 @@ The GPS MVP-1 migration did not change existing Conversation Engine tables:
 * `conversations`
 * `messages`
 * `conversation_events`
+
+Summer Map v1.1 later updated the existing `conversations.current_stage` check constraint in `bgs_core` to allow the new `waiting_q5` stage.
+
+Applied migration:
+
+* `braincoach-docs/07_automation/04_postgres/005_summer_map_v1_1_conversation_stage.sql`
+
+Live verification on 2026-06-16:
+
+```text
+chk_conversation_stage | CHECK ((current_stage = ANY (ARRAY[
+  'new'::text,
+  'waiting_q1'::text,
+  'waiting_q2'::text,
+  'waiting_q3'::text,
+  'waiting_q4'::text,
+  'waiting_q5'::text,
+  'analysis'::text,
+  'completed'::text
+])))
+```
 
 The migration did not create the later GPS interpretation tables:
 
@@ -624,6 +645,7 @@ Explicit check constraints:
 | --- | --- | --- |
 | `research_signal_candidates` | `chk_research_signal_candidates_confidence` | `confidence` is null or between `0` and `1` |
 | `research_signal_candidates` | `chk_research_signal_candidates_status` | `status` is one of `candidate`, `accepted`, `rejected`, `merged`, `promoted` |
+| `conversations` | `chk_conversation_stage` | `current_stage` is one of `new`, `waiting_q1`, `waiting_q2`, `waiting_q3`, `waiting_q4`, `waiting_q5`, `analysis`, `completed` in `bgs_core` |
 
 ## Indexes
 
