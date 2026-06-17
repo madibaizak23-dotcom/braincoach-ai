@@ -85,6 +85,42 @@ Recommended indexes after approval:
 - `instagram_comment_snapshots_media_id_collected_at_idx` on `(instagram_media_id, collected_at desc)`
 - `instagram_comment_snapshots_comment_id_idx` on `(instagram_comment_id)`
 
+### production.instagram_comment_inbox_items
+
+Stores MVP-1.5 Instagram Intelligence Inbox classification items.
+
+This table is for visibility and triage only.
+
+It does not store approved replies.
+It does not trigger public actions.
+It does not promote comments into `bgs_core`.
+
+| column | type | required | description |
+| --- | --- | --- | --- |
+| `inbox_item_id` | uuid | yes | Primary key. |
+| `instagram_comment_id` | text | yes | Source comment id. |
+| `instagram_media_id` | text | yes | Parent media id. |
+| `classification` | text | yes | Primary class: `signal`, `question`, `interview_candidate`, `spam`, or `risk`. |
+| `secondary_labels` | jsonb | yes | Optional labels such as `offer_signal`, `content_gap`, `objection`, or `strong_case`. |
+| `priority` | text | yes | `low`, `normal`, `high`, or `urgent`. |
+| `why_it_matters` | text | no | Short classification rationale for the operator. |
+| `recommended_next_action` | text | no | Suggested human action, such as observe, reply manually, ask interview, ignore, or escalate. |
+| `telegram_sent_at` | timestamptz | no | When the comment card was sent to Telegram. |
+| `status` | text | yes | `new`, `seen`, `handled`, `ignored`, or `escalated`. |
+| `raw_classification` | jsonb | yes | Full classifier output. |
+| `created_at` | timestamptz | yes | Row creation timestamp. |
+
+Draft uniqueness:
+
+```text
+(instagram_comment_id)
+```
+
+Recommended indexes after approval:
+
+- `instagram_comment_inbox_items_classification_idx` on `(classification, priority, created_at desc)`
+- `instagram_comment_inbox_items_media_id_idx` on `(instagram_media_id, created_at desc)`
+
 ### production.outcomes
 
 Stores one production outcome summary per media collection run.
@@ -126,12 +162,14 @@ Required writes:
 
 - insert media snapshots into `production.instagram_media_snapshots`
 - insert comment snapshots into `production.instagram_comment_snapshots`
+- insert comment classifications into `production.instagram_comment_inbox_items`
 - insert summarized daily outcomes into `production.outcomes`
 
 Required reads:
 
 - read yesterday/today windows from `production.instagram_media_snapshots`
 - read comment windows from `production.instagram_comment_snapshots`
+- read classification windows from `production.instagram_comment_inbox_items`
 - read outcomes from `production.outcomes`
 
 ## Non-Goals

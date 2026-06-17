@@ -242,3 +242,29 @@ It does not:
 - delete comments;
 - write to `bgs_core`;
 - create or apply SQL migrations.
+
+## Next Stage
+
+Posting, comment replies, and Direct message replies are intentionally outside MVP-1.
+
+Nearest next-stage spec:
+
+`braincoach-docs/07_automation/03_n8n/instagram_intelligence_inbox_mvp1_5.md`
+
+MVP-1.5 should build Instagram Intelligence Inbox before Publishing Assistant:
+
+- classify new comments;
+- send Telegram comment cards;
+- surface signal, question, interview candidate, spam, and risk;
+- take no public action;
+- write only to `bgs_orch.production`.
+
+Broader later-stage plan:
+
+`braincoach-docs/07_automation/03_n8n/instagram_social_automation_mvp2_plan.md`
+
+MVP-2 should still use Telegram approval gates before any public write action:
+
+- approve before publishing content;
+- approve before replying to public comments;
+- approve before replying to Direct messages.
