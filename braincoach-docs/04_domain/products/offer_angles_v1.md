@@ -4,6 +4,8 @@ Status: Active
 
 Date: 2026-06-07
 
+Last Updated: 2026-06-18
+
 Purpose:
 
 Identify the strongest market entry points for BrainCoach GPS based on parent pain rather than product features.
@@ -28,11 +30,24 @@ Updated parent purchase motives:
 * protection against lost opportunity
 * confidence that investments convert into results
 
-Dependence on external management remains a strong mechanism-level problem, but the market-level purchase language should be tested around trajectory risk and conversion of investment into long-term outcomes.
+SJ-2026-06-18-002 clarification:
+
+Self Learning Capability is not the buyable result.
+
+Self Learning Capability is the mechanism that helps produce the buyable result.
+
+Current buyable-result hypothesis:
+
+```text
+trajectory stability
+without constant external management
+```
+
+Dependence on external management remains a strong mechanism-level problem and proof signal, but the market-level purchase language should be tested around trajectory stability, trajectory risk, and conversion of investment into long-term outcomes.
 
 ---
 
-# Core Market Problem
+# Core Mechanism-Level Problem
 
 Dependence On External Management
 
@@ -42,7 +57,7 @@ The child requires constant external initiation, supervision, prompting, or supp
 
 BrainCoach does not sell tutoring.
 
-BrainCoach reduces dependence on external management.
+BrainCoach uses reduction of dependence on external management as one mechanism for producing trajectory stability.
 
 ---
 

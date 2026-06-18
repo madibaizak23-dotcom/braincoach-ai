@@ -4,6 +4,8 @@ Status: Planned
 
 Date: 2026-06-07
 
+Last Updated: 2026-06-18
+
 Owner: BrainCoach
 
 ---
@@ -18,7 +20,23 @@ Current bottleneck has shifted from knowledge production to offer discovery.
 
 The next objective is to transform Trajectory Development and its mechanism layer, Learning Intelligence, into a repeatable and scalable product system.
 
-Self Learning Capability remains a key sub-object and mechanism, but it is no longer the top-level market category.
+Self Learning Capability remains a key sub-object and mechanism, but it is no longer the top-level market category or the buyable result.
+
+2026-06-18 update:
+
+The active bottleneck is now defined more sharply as payment trigger discovery.
+
+Current constraint:
+
+```text
+Phenomenon
+↓
+Payment Trigger
+↓
+Offer
+```
+
+BrainCoach must prove which concrete transformation parents are willing to pay for before scaling content, automation, or GPS packaging.
 
 ---
 
@@ -47,6 +65,29 @@ Parents buy desired outcomes.
 # Core Question
 
 How do we transform Trajectory Intelligence into a repeatable offer that families pursuing competitive trajectories are willing to buy?
+
+Immediate validation question:
+
+```text
+What transformation are parents already trying to buy?
+```
+
+Current buyable-result hypothesis:
+
+```text
+trajectory stability
+without constant external management
+```
+
+Mechanism hypothesis:
+
+```text
+Self Learning Capability
+↓
+Reduced dependence on external management
+↓
+Trajectory stability
+```
 
 ---
 
@@ -86,6 +127,8 @@ Mechanism hypothesis:
 
 Learning Intelligence and Self Learning Capability explain part of why investments do or do not convert into long-term results.
 
+Self Learning Capability is treated as a mechanism, not the customer-facing result.
+
 Historical hypothesis:
 
 The previous focus, "smart teenager, visible potential, low realization," remains useful as an observed pattern but is no longer the primary market segment definition.
@@ -101,6 +144,27 @@ For every validated phenomenon identify:
 3. Desired Outcome
 4. Success Metric
 5. Potential Product
+
+For the current payment-trigger cycle, add:
+
+6. Prior Purchases
+7. Failed Attempts
+8. Biggest Spend
+9. Last Straw Moment
+10. Fear Behind Search
+11. Transformation The Parent Would Pay To See Earlier
+
+Do not ask primarily:
+
+```text
+What do you think?
+```
+
+Ask:
+
+```text
+What have you already done?
+```
 
 ---
 
@@ -206,6 +270,24 @@ Phenomenon → Pain → Outcome → Product Map
 
 For every validated phenomenon.
 
+For the 2026-06-18 cycle, also create:
+
+```text
+Market Pain
+↓
+Payment Story
+↓
+Diagnostic Phenomenon
+↓
+Mechanism
+↓
+Offer Hypothesis
+↓
+Next Step
+```
+
+The Wednesday masterclass should be used as a cold-audience Offer Discovery session with a target of 10-15 high-quality payment stories.
+
 ---
 
 # Success Criteria
@@ -214,7 +296,7 @@ A parent-facing value proposition exists for every major phenomenon.
 
 A product map exists for all validated phenomena.
 
-Self Learning Capability is translated from research language into customer language.
+Self Learning Capability is translated from research language into customer language as a mechanism behind the buyable result, not as the result itself.
 
 ---
 
@@ -264,6 +346,21 @@ Parent demand may not be for self-learning itself.
 Parent demand may be for reducing the child's dependence on external control, supervision and support.
 
 Self Learning Capability remains the proposed mechanism that enables this outcome.
+
+2026-06-18 clarification:
+
+The stronger wording is:
+
+```text
+Self Learning Capability
+is not the buyable result.
+
+Self Learning Capability
+is the mechanism that helps produce the buyable result.
+
+Buyable result:
+trajectory stability without constant external management.
+```
 
 Research Layer
 
@@ -327,6 +424,12 @@ Current stronger hypothesis:
 Parents buy confidence that significant investments in competitive trajectories will convert into long-term results.
 
 Reduced dependence on external management is one important mechanism and proof signal inside that broader purchase motive.
+
+Sharper buyable-result hypothesis:
+
+Parents may buy trajectory stability without constant external management.
+
+Self Learning Capability is the mechanism that makes this stability more likely.
 
 Success Criterion:
 

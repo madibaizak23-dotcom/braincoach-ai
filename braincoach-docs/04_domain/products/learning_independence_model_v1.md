@@ -4,6 +4,8 @@ Status: Draft
 
 Date: 2026-06-07
 
+Last Updated: 2026-06-18
+
 Owner: BrainCoach
 
 ---
@@ -13,6 +15,17 @@ Owner: BrainCoach
 Formalize the primary market problem identified during Offer Discovery.
 
 This document describes the relationship between Self Learning Capability and dependence on external management.
+
+2026-06-18 clarification:
+
+Self Learning Capability is not the buyable result.
+
+Self Learning Capability is the mechanism that helps produce the buyable result:
+
+```text
+trajectory stability
+without constant external management
+```
 
 ---
 
@@ -144,11 +157,17 @@ Parents are not primarily purchasing knowledge.
 
 Parents are not primarily purchasing tutoring.
 
-Parents are purchasing reduced dependence on external management.
+Parents may not primarily be purchasing Self Learning Capability or reduced dependence on external management as standalone outcomes.
+
+Current stronger hypothesis:
+
+Parents are purchasing trajectory stability without constant external management.
+
+Reduced dependence on external management is the mechanism and proof signal that makes this result believable.
 
 Desired State:
 
-The child becomes the source of motion rather than the recipient of motion.
+The child's trajectory remains stable when constant parent, tutor, coach, or school management is reduced.
 
 ---
 
@@ -208,7 +227,7 @@ Independently initiates and completes complex work
 
 BrainCoach may not be operating in the tutoring market.
 
-BrainCoach may be operating in the learning independence market.
+BrainCoach may be operating in the trajectory stability market for families with meaningful prior investment.
 
 Research Focus:
 
@@ -216,13 +235,13 @@ Self Learning Capability
 
 Market Focus:
 
-Dependence on External Management
+Trajectory Stability Without Constant External Management
 
 Transformation:
 
-From externally managed learning
+From externally managed trajectory
 
-To self-directed learning
+To stable trajectory with internal capability
 
 ---
 

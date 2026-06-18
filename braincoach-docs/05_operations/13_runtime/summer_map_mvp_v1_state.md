@@ -6,9 +6,17 @@ Date: 2026-06-12
 
 Last Updated: 2026-06-16
 
+Strategic Update: 2026-06-18
+
 Current Version:
 
 Summer Map v1.1 - Interview to GPS Conversion Optimization
+
+Strategic Direction:
+
+Summer Map should evolve from a separate summer questionnaire into the universal BrainCoach Discovery Engine.
+
+The engine should support multiple research templates, Russian / Kazakh language selection, PostgreSQL-loaded questions, and signal classification across market, offer, and phenomenon layers.
 
 ## Workflow Export
 
@@ -178,6 +186,42 @@ Tables intentionally not required in the MVP path:
 * `observations`
 * `research_signal_candidates`
 
+## Universal Discovery Engine Direction
+
+The current Summer Map MVP remains a valid runtime baseline.
+
+The next design direction should not create a separate questionnaire for every topic.
+
+Target architecture:
+
+```text
+one engine
+different research templates
+one database
+one signal logic
+```
+
+Required future capabilities:
+
+* language selection: Russian / Kazakh;
+* survey template selection by scenario;
+* question loading from PostgreSQL instead of hardcoded question flow;
+* scenario support for summer, sport, study, NIS, tutors, potential, and independence;
+* answer persistence as market, offer, and phenomenon signals;
+* GPS transition only after the user has received a clear value frame.
+
+The key design change is that the bot should capture what parents have already done and bought, not only what they think about a diagnostic topic.
+
+Primary offer-discovery questions:
+
+1. What have you already invested in for your child's development?
+2. What produced a result?
+3. What did not produce a result?
+4. Where did the most money go?
+5. What became the last straw?
+6. Was there a moment: "We invested so much, why is there no result?"
+7. What would you want to see earlier, before the final failure?
+
 ## Event Model
 
 Events are persisted in `conversation_events` with `event_payload.source = 'summer_map'`.
@@ -215,6 +259,28 @@ The MVP v1.1 uses a measured GPS handoff:
 * After the click, the bot returns one URL button to `https://t.me/BrainCoach_GPS_bot?start=summer_map`.
 
 For GPS onboarding, the receiving bot should treat `start=summer_map` as the source attribution for the Summer Map pilot.
+
+Strategic correction:
+
+GPS should not be framed primarily as a tracker.
+
+It should be framed as early visibility into whether a child's trajectory investment is converting into real progress.
+
+Working transition:
+
+```text
+Interview
+↓
+GPS
+↓
+14-day trajectory review
+```
+
+Working parent-facing question:
+
+```text
+How can you understand whether your investment in a child is turning into real progress?
+```
 
 ## Recommended Next Steps for GPS Onboarding
 

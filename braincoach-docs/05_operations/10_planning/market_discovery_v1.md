@@ -4,6 +4,8 @@ Status: Active Working Hypothesis
 
 Date: 2026-06-16
 
+Last Updated: 2026-06-18
+
 Owner: BrainCoach
 
 Layer: 05_operations/10_planning
@@ -133,6 +135,53 @@ The stronger market frame is:
 
 "A family made a serious trajectory investment and fears losing the opportunity."
 
+## 2026-06-18 Payment Trigger Update
+
+The immediate validation priority is not to collect more general opinions about development, independence, GPS, or content.
+
+The priority is to collect payment stories.
+
+Primary discovery chain:
+
+```text
+Existing Investment
+↓
+Failed / Partial Result
+↓
+Last Straw
+↓
+Fear
+↓
+Desired Earlier Visibility
+↓
+Payment Trigger
+```
+
+The key question is:
+
+```text
+What did the parent already buy before BrainCoach appeared?
+```
+
+Strong market evidence requires concrete behavior:
+
+* money spent;
+* time spent;
+* programs tried;
+* tutors, coaches, schools, courses, diagnostics, or competitions purchased;
+* visible disappointment after investment;
+* fear that the window of opportunity is closing;
+* desire to see risk before final results appear.
+
+Current buyable-result hypothesis:
+
+```text
+trajectory stability
+without constant external management
+```
+
+Self Learning Capability is treated as the mechanism behind this result, not as the result parents are expected to buy.
+
 ---
 
 ## Relationship To Positioning
@@ -233,6 +282,16 @@ Those may be mechanisms, proof signals, or entry points, not the market itself.
 6. What observable signals would make families feel that the trajectory is improving before final results appear?
 
 7. What have these families already bought to protect the trajectory?
+
+8. What was the most expensive attempt to solve the problem?
+
+9. What did the parent expect to change after that purchase?
+
+10. What did not change?
+
+11. What was the last straw that made the parent search for another solution?
+
+12. What would the parent have paid to see earlier?
 
 ---
 

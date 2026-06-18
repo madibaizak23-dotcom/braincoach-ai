@@ -1,3 +1,372 @@
+## DEC-026 Weekly Sprint
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Weekly Sprint as the planning layer that turns tracker notes, habits, study blocks, content work, client work, events, preparation, reminders, and free windows into a weekly control loop.
+
+Weekly Sprint is not a task list.
+
+It is a control loop:
+
+Goal
+
+->
+
+Week structure
+
+->
+
+Time blocks
+
+->
+
+Load check
+
+->
+
+Reminders
+
+->
+
+Execution feedback
+
+->
+
+Correction
+
+Status:
+
+Accepted
+
+Related:
+
+* Weekly Sprint v1
+* Practice Loop v1
+* tracker_capture_v1
+
+## DEC-025 Practice Loop
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Practice Loop as the operational use of its foundation stack for founder self-tracking, client tracking, marketing, offer discovery, product decisions, and agent reasoning.
+
+The loop connects tracker input to DOTU, TOC, TRIZ, Logic Discipline, adaptation patterns / radicals, decision, action, and feedback.
+
+Core loop:
+
+Observation
+
+->
+
+Interpretation
+
+->
+
+Choice
+
+->
+
+Action
+
+->
+
+Measurement
+
+->
+
+Correction
+
+Tracker entries are no longer treated only as saved notes or raw signal candidates.
+
+They become intake material for a self-correcting practice loop.
+
+Status:
+
+Accepted
+
+Related:
+
+* Practice Loop v1
+* DEC-020 Thinking OS As Practice
+* DEC-021 DOTU And Sociology Foundation Intake
+* DEC-022 Goldratt Choice Practice
+* DEC-023 TRIZ Contradiction Practice
+* DEC-024 Logic Discipline Practice
+
+## DEC-024 Logic Discipline Practice
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Logic Discipline Practice as an active foundation practice for humans and agents.
+
+Core rule:
+
+No conclusion without valid reasoning.
+
+No inference without premises.
+
+No premise without meaning.
+
+No meaning without boundaries.
+
+No claim stronger than its logical support.
+
+Agents must check term meaning, statement, premise, quantifier / scope, inference, conclusion, contradiction, and reality feedback.
+
+Status:
+
+Accepted
+
+Related:
+
+* Logic Discipline Practice v1
+* DEC-020 Thinking OS As Practice
+* DEC-022 Goldratt Choice Practice
+* DEC-023 TRIZ Contradiction Practice
+
+## DEC-023 TRIZ Contradiction Practice
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts TRIZ Contradiction Practice as an active foundation practice.
+
+A contradiction is a high-value signal.
+
+It should be treated as:
+
+signal of unresolved design
+
+not reason to choose a weak compromise
+
+Agents working with contradictions must state desired improvement, worsening effect, contradiction, system level, available resources, possible separation, inventive option, expected signal, feedback window, and correction rule.
+
+Status:
+
+Accepted
+
+Related:
+
+* TRIZ Contradiction Practice v1
+* DEC-020 Thinking OS As Practice
+* DEC-022 Goldratt Choice Practice
+
+## DEC-022 Goldratt Choice Practice
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Goldratt Choice Practice as an active foundation practice for humans and agents.
+
+Choice is not preference selection.
+
+Choice is disciplined reasoning under constraint:
+
+Goal
+
+↓
+
+Current reality
+
+↓
+
+Constraint
+
+↓
+
+Conflict / contradiction
+
+↓
+
+Assumptions
+
+↓
+
+Invalid assumption
+
+↓
+
+Better option
+
+↓
+
+Reality feedback
+
+Agents must define goal, current reality, constraint, visible options, conflict, assumptions, most testable assumption, proposed choice, expected signal, feedback window, and correction rule.
+
+Status:
+
+Accepted
+
+Related:
+
+* Goldratt Choice Practice v1
+* DEC-020 Thinking OS As Practice
+* DEC-021 DOTU And Sociology Foundation Intake
+
+## DEC-021 DOTU And Sociology Foundation Intake
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts a top-down source intake process for DOTU and Sociology.
+
+Canon remains unchanged.
+
+Source concepts first enter Foundation, then may become Ontology Candidates, then Knowledge / Intelligence Objects, then Signal and Phenomenon mappings, then Domain Models, then Marketing Translation, then Operations / GPS / Survey / Offer use.
+
+Core rule:
+
+The model is not the world.
+
+The model is a map with a measure of approximation.
+
+Terms describe processes, layers, regimes, and mechanisms.
+
+Terms must not become labels for people.
+
+Initial concept areas:
+
+* measure / мера
+* control / управление
+* full function of control / полная функция управления
+* psyche / психика
+* psyche structure / строй психики
+* biological automatic layer
+* fight / flight and automatic defensive reactions
+* herd-pack behavior / стадно-стайное поведение
+* culture / культура
+* society / общество
+* humaneness / человечность
+* conscience / совесть
+* morality / нравственность
+* crowd-elitism / толпо-элитаризм
+* social control and social inheritance
+
+Status:
+
+Accepted
+
+Related:
+
+* DOTU And Sociology Foundation Intake v1
+* DEC-020 Thinking OS As Practice
+* BrainCoach Ontology v1.0
+
+## DEC-020 Thinking OS As Practice
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Thinking OS as an active practice for serious analysis, strategic decisions, offer discovery, payment trigger discovery, GPS positioning, production system design, content-to-offer work, AI-agent reasoning, and system reviews.
+
+Practice rule:
+
+No random thinking.
+
+No theory for decoration.
+
+No framework without decision.
+
+Every serious analysis should follow:
+
+DOTU Control Frame
+
+↓
+
+Sociological Context
+
+↓
+
+Constraint Detection
+
+↓
+
+Contradiction Detection
+
+↓
+
+Demand / Payment Trigger
+
+↓
+
+Signal / Phenomenon
+
+↓
+
+Decision
+
+↓
+
+Feedback
+
+Status:
+
+Accepted
+
+Related:
+
+* BrainCoach Thinking OS Practice v1
+* DEC-019 Payment Trigger Discovery Priority
+* Operational Philosophy v2.0
+
+## DEC-019 Payment Trigger Discovery Priority
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Payment Trigger Discovery as the immediate priority for the next Offer Discovery cycle.
+
+The active commercial constraint is:
+
+Phenomenon
+
+↓
+
+Payment Trigger
+
+↓
+
+Offer
+
+The Wednesday masterclass should be used as cold-audience Offer Discovery, with a target of 10-15 high-quality payment stories.
+
+Offer Discovery must focus on what parents already bought, what failed, what cost meaningful money, what became the last straw, and what transformation they wanted to see earlier.
+
+Summer Map should evolve toward a universal BrainCoach Discovery Engine with multiple templates, Russian / Kazakh language support, PostgreSQL-loaded questions, and answer classification as market, offer, and phenomenon signals.
+
+GPS should be positioned as early visibility into whether trajectory investment converts into real progress, not only as a tracker.
+
+Clarification SJ-2026-06-18-002:
+
+Self Learning Capability is not the buyable result. It is the mechanism that helps produce the buyable result.
+
+Current buyable-result hypothesis:
+
+trajectory stability without constant external management.
+
+Status:
+
+Accepted
+
+Related:
+
+* DEC-007 Offer Discovery Layer
+* Market Discovery v1
+* Offer Discovery v1
+* Strategy Journal 2026-06-18 Payment Trigger
+
 ## DEC-018 BrainCoach Compliance Gate v1
 
 Date: 2026-06-16

@@ -23,6 +23,39 @@ This workflow is not a journaling system.
 
 Tracker is the intake layer of BrainCoach GPS and the signal detection engine.
 
+Tracker entries also feed BrainCoach Practice Loop.
+
+The workflow captures the raw material.
+
+Practice Loop interprets that material through DOTU, TOC, TRIZ, Logic Discipline, adaptation patterns / radicals, decision, action, and feedback.
+
+Practice artifact:
+
+`braincoach-docs/05_operations/14_workflows/practice_loop_v1.md`
+
+Tracker should also support Council Mode.
+
+Council Mode treats the tracker as external working memory for previously studied source systems:
+
+* Goldratt / TOC;
+* Altshuller / TRIZ;
+* Lobanov / Russian Logic;
+* DOTU collective authors;
+* Sociology foundation;
+* adaptation patterns / radicals.
+
+The goal is not author imitation.
+
+The goal is to apply their methods to the founder's and clients' current reality.
+
+Tracker should also support Weekly Sprint planning.
+
+Weekly Sprint turns tracker notes into a weekly schedule with fixed events, habits, study blocks, content production, preparation blocks, reminders, load checks, free windows, and weekly review.
+
+Weekly Sprint artifact:
+
+`braincoach-docs/05_operations/14_workflows/weekly_sprint_v1.md`
+
 ## Strategic Role
 
 BrainCoach GPS tracks trajectory earlier than visible results.
@@ -57,6 +90,58 @@ Raw Input
 Observation
 ->
 Signal Candidate
+```
+
+Practice interpretation layer:
+
+```text
+Tracker Entry
+->
+DOTU Control Frame
+->
+TOC Constraint
+->
+TRIZ Contradiction
+->
+Logic Discipline
+->
+Adaptation / Radical Lens
+->
+Decision or Experiment
+->
+Feedback
+```
+
+Council Mode short form:
+
+```text
+Preserve raw thought
+->
+Ask through DOTU / TOC / TRIZ / Logic / Adaptation lenses
+->
+Name constraint or contradiction
+->
+Keep indeterminate state when evidence is incomplete
+->
+Suggest one next action or question
+```
+
+Weekly Sprint short form:
+
+```text
+Capture weekly intention
+->
+Place fixed events
+->
+Place recurring routines
+->
+Estimate preparation blocks
+->
+Check load and free windows
+->
+Remind
+->
+Review and correct
 ```
 
 ## Current Workflow Flow

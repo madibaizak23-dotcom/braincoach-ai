@@ -6,6 +6,131 @@ Status: Active Reference
 
 ---
 
+# Practice Loop
+
+Status:
+
+Active Practice
+
+Decision:
+
+DEC-025 Practice Loop
+
+Artifact:
+
+`braincoach-docs/05_operations/14_workflows/practice_loop_v1.md`
+
+BrainCoach foundation stack is now used as a daily and weekly practice loop for founder self-tracking, client tracking, marketing, offer discovery, product decisions, and agent reasoning.
+
+Core loop:
+
+```text
+Raw tracker idea / observation
+->
+DOTU control frame
+->
+Current reality and goal vector
+->
+TOC constraint
+->
+TRIZ contradiction
+->
+Logic discipline
+->
+Adaptation / radical lens
+->
+Decision or experiment
+->
+Action
+->
+Feedback from reality
+->
+Updated model
+```
+
+Operational short form:
+
+```text
+Observe
+->
+Interpret
+->
+Choose
+->
+Act
+->
+Measure
+->
+Correct
+```
+
+Tracker entries are intake material for this self-correcting loop, not only saved notes.
+
+Council Mode:
+
+Tracker also acts as external working memory and practical method support.
+
+It applies preserved source methods to current reality:
+
+* DOTU for control and feedback;
+* Goldratt / TOC for constraint and choice;
+* Altshuller / TRIZ for contradiction and stronger solution;
+* Lobanov / Russian Logic for valid reasoning and indeterminate states;
+* DOTU / Sociology for human and social layers;
+* adaptation patterns / radicals for support strategy.
+
+The goal is not author imitation.
+
+The goal is method application to the founder's and clients' current reality.
+
+Adaptation patterns / radicals are diagnostic lenses, not identity labels.
+
+Logic states remain ternary:
+
+```text
+validated
+contradicted
+indeterminate
+```
+
+# Weekly Sprint
+
+Status:
+
+Working Specification
+
+Decision:
+
+DEC-026 Weekly Sprint
+
+Artifact:
+
+`braincoach-docs/05_operations/14_workflows/weekly_sprint_v1.md`
+
+Weekly Sprint turns tracker notes, habits, study blocks, content work, client work, events, preparation, reminders, and free windows into a weekly control loop.
+
+Core loop:
+
+```text
+Goal
+->
+Week structure
+->
+Time blocks
+->
+Load check
+->
+Reminders
+->
+Execution feedback
+->
+Correction
+```
+
+Weekly Sprint can include personal routines, breathing exercises, son's study blocks, content production, delayed posting, masterclass preparation, recovery windows, and weekly review.
+
+No actual reminder automation has been created yet.
+
 # Current Production System
 
 BrainCoach GPS MVP-1 — bgs_core adapted
@@ -139,6 +264,291 @@ Positioning Update 2026-06-16:
 BrainCoach now uses Trajectory Intelligence System as the top-level category.
 
 Self Learning Capability remains a key mechanism-level object, not the top-level market category.
+
+---
+
+# Thinking OS Practice
+
+Status:
+
+Active Practice
+
+Decision:
+
+DEC-020 Thinking OS As Practice
+
+Practice Artifact:
+
+`braincoach-docs/01_foundation/braincoach_thinking_os_practice_v1.md`
+
+Core Rule:
+
+BrainCoach Thinking OS is not a theory collection.
+
+It is the required practice for serious analysis and decisions.
+
+Minimum chain:
+
+DOTU Control Frame
+
+в†“
+
+Sociological Context
+
+в†“
+
+Constraint Detection
+
+в†“
+
+Contradiction Detection
+
+в†“
+
+Demand / Payment Trigger
+
+в†“
+
+Signal / Phenomenon
+
+в†“
+
+Decision
+
+в†“
+
+Feedback
+
+Operational rule:
+
+No random thinking.
+
+No theory for decoration.
+
+No framework without decision.
+
+---
+
+# DOTU And Sociology Foundation Intake
+
+Status:
+
+Active Foundation Intake
+
+Decision:
+
+DEC-021 DOTU And Sociology Foundation Intake
+
+Artifact:
+
+`braincoach-docs/01_foundation/dotu_sociology_foundation_intake_v1.md`
+
+Boundary:
+
+Canon remains unchanged.
+
+Source concepts move top-down:
+
+Foundation
+
+в†“
+
+Ontology Candidates
+
+в†“
+
+Knowledge / Intelligence Objects
+
+в†“
+
+Signal and Phenomenon Mapping
+
+в†“
+
+Domain Models
+
+в†“
+
+Marketing Translation
+
+в†“
+
+Operations / GPS / Survey / Offer
+
+Core rule:
+
+The model is not the world.
+
+The model is a map with a measure of approximation.
+
+Terms describe processes, layers, regimes, and mechanisms.
+
+Terms must not become labels for people.
+
+---
+
+# Goldratt Choice Practice
+
+Status:
+
+Active Practice
+
+Decision:
+
+DEC-022 Goldratt Choice Practice
+
+Artifact:
+
+`braincoach-docs/01_foundation/goldratt_choice_practice_v1.md`
+
+Core rule:
+
+Choice is not preference selection.
+
+Choice is disciplined reasoning under constraint.
+
+Minimum chain:
+
+Goal
+
+в†“
+
+Current reality
+
+в†“
+
+Constraint
+
+в†“
+
+Conflict / contradiction
+
+в†“
+
+Assumptions
+
+в†“
+
+Invalid assumption
+
+в†“
+
+Better option
+
+в†“
+
+Reality feedback
+
+Agent requirement:
+
+Every choice recommendation must state expected signal, feedback window, and correction rule.
+
+---
+
+# TRIZ Contradiction Practice
+
+Status:
+
+Active Practice
+
+Decision:
+
+DEC-023 TRIZ Contradiction Practice
+
+Artifact:
+
+`braincoach-docs/01_foundation/triz_contradiction_practice_v1.md`
+
+Domain Guide:
+
+`braincoach-docs/04_domain/triz_guide.md`
+
+Core rule:
+
+A contradiction is a high-value signal.
+
+It is a signal of unresolved design, not a reason to choose a weak compromise.
+
+Minimum chain:
+
+Desired improvement
+
+в†“
+
+Worsening effect
+
+в†“
+
+Contradiction
+
+в†“
+
+Resources
+
+в†“
+
+Separation
+
+в†“
+
+Inventive option
+
+в†“
+
+Reality feedback
+
+---
+
+# Logic Discipline Practice
+
+Status:
+
+Active Practice
+
+Decision:
+
+DEC-024 Logic Discipline Practice
+
+Artifact:
+
+`braincoach-docs/01_foundation/logic_discipline_practice_v1.md`
+
+Core rule:
+
+No conclusion without valid reasoning.
+
+No inference without premises.
+
+No premise without meaning.
+
+No meaning without boundaries.
+
+No claim stronger than its logical support.
+
+Agent requirement:
+
+Every serious output must check term meaning, premise, quantifier / scope, inference, conclusion, contradiction, and reality feedback.
+
+Working basis:
+
+Russian Logic is the primary working foundation candidate for formal reasoning, syllogistic analysis, quantifier discipline, and ternary treatment of unresolved states.
+
+Ternary states:
+
+* true / validated
+* false / contradicted
+* unknown / candidate / indeterminate
+
+Claim labels:
+
+* observed fact
+* source statement
+* interpretation
+* inference
+* hypothesis
+* validated knowledge
+* market signal
+* decision
 
 ---
 

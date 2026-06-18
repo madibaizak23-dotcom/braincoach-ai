@@ -8,6 +8,299 @@ Chronological record of major architectural decisions, milestones, discoveries, 
 
 ---
 
+## 2026-06-18
+
+### Weekly Sprint Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-026 Weekly Sprint`
+
+Objective:
+
+Create a weekly planning and reminder specification for tracker-driven personal practice, learning blocks, content production, client work, events, preparation, load checks, free windows, execution feedback, and correction.
+
+Outcome:
+
+* Added Weekly Sprint v1 under `05_operations/14_workflows`.
+* Accepted DEC-026 as the governance decision.
+* Linked Weekly Sprint from Practice Loop and tracker capture.
+* Defined weekly planning as a control loop rather than a task list.
+* Included reminders, missed-action recovery, content slots, masterclass preparation, and weekly review.
+
+Explicit Non-Action:
+
+* No actual reminder automation was created.
+* No SQL was executed.
+* No n8n workflow JSON was changed.
+
+### Practice Loop Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-025 Practice Loop`
+
+Objective:
+
+Operationalize BrainCoach foundation stack as a recurring practice for founder self-tracking, client tracking, marketing, offer discovery, product decisions, and agent reasoning.
+
+Outcome:
+
+* Added Practice Loop v1 under `05_operations/14_workflows`.
+* Accepted DEC-025 as the governance decision.
+* Linked Practice Loop from Thinking OS and tracker capture.
+* Defined tracker entries as raw material for DOTU, TOC, TRIZ, Logic Discipline, adaptation patterns / radicals, decision, action, and feedback.
+* Added Council Mode: tracker as external working memory and practical method support using Goldratt / TOC, Altshuller / TRIZ, Lobanov / Russian Logic, DOTU, Sociology, and adaptation patterns / radicals.
+* Preserved ternary logic states in practice: validated, contradicted, indeterminate.
+* Defined adaptation patterns / radicals as diagnostic lenses, not identity labels.
+
+Explicit Non-Action:
+
+* Canon was not changed.
+* No SQL was executed.
+* No n8n workflow JSON was changed.
+* No client-facing heavy theory language was introduced.
+
+### Logic Discipline Practice Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-024 Logic Discipline Practice`
+
+Objective:
+
+Make formal logic discipline a mandatory gate for BrainCoach humans and agents so fluent outputs do not bypass valid reasoning.
+
+Outcome:
+
+* Added Logic Discipline Practice v1 under `01_foundation`.
+* Accepted DEC-024 as the governance decision.
+* Linked Logic Discipline from Thinking OS and Operational Philosophy.
+* Established checks for terms, premises, quantifiers, inference, conclusion, contradiction, and reality feedback.
+* Required agents to label claims as observed fact, source statement, interpretation, inference, hypothesis, validated knowledge, market signal, or decision.
+* Preserved Russian Logic as the primary working foundation candidate for formal reasoning, syllogistic analysis, quantifier discipline, and ternary treatment of unresolved states.
+* Added the rule that agents must not collapse unknown, candidate, or indeterminate states into true or false.
+
+Explicit Non-Action:
+
+* Canon was not changed.
+* No accepted ontology terms were added.
+* The source's polemical or historical claims were not automatically accepted as validated BrainCoach knowledge, but source claims relevant to method were preserved.
+* No SQL was executed.
+* No migration was approved.
+* The full PDF was not imported into the repository.
+
+Artifacts:
+
+* `braincoach-docs/01_foundation/logic_discipline_practice_v1.md`
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-024-logic-discipline-practice.md`
+* `braincoach-docs/01_foundation/braincoach_thinking_os_practice_v1.md`
+* `braincoach-docs/01_foundation/operational_philosophy.md`
+
+---
+
+### TRIZ Contradiction Practice Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-023 TRIZ Contradiction Practice`
+
+Objective:
+
+Make TRIZ a trained BrainCoach practice for contradiction formulation, resource search, separation, inventive option generation, and feedback design.
+
+Outcome:
+
+* Added TRIZ Contradiction Practice v1 under `01_foundation`.
+* Accepted DEC-023 as the governance decision.
+* Filled `04_domain/triz_guide.md` with a domain-facing application guide.
+* Linked TRIZ from Thinking OS, Choice Practice, and Operational Philosophy.
+* Established the rule that contradiction is a high-value signal of unresolved design, not a reason to accept weak compromise.
+
+Explicit Non-Action:
+
+* Canon was not changed.
+* No accepted ontology terms were added.
+* No SQL was executed.
+* No migration was approved.
+* The full PDF was not imported into the repository.
+
+Artifacts:
+
+* `braincoach-docs/01_foundation/triz_contradiction_practice_v1.md`
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-023-triz-contradiction-practice.md`
+* `braincoach-docs/04_domain/triz_guide.md`
+
+---
+
+### Goldratt Choice Practice Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-022 Goldratt Choice Practice`
+
+Objective:
+
+Make choice a trained BrainCoach practice for humans and agents, grounded in TOC-style clear thinking rather than preference selection or mass opinion.
+
+Outcome:
+
+* Added Goldratt Choice Practice v1 under `01_foundation`.
+* Accepted DEC-022 as the governance decision.
+* Linked Choice Practice from Thinking OS and Operational Philosophy.
+* Defined choice as Goal -> Current reality -> Constraint -> Conflict / contradiction -> Assumptions -> Invalid assumption -> Better option -> Reality feedback.
+* Added an agent output template for choice recommendations.
+
+Explicit Non-Action:
+
+* Canon was not changed.
+* No accepted ontology terms were added.
+* No SQL was executed.
+* No migration was approved.
+* The full book was not imported into the repository.
+
+Artifacts:
+
+* `braincoach-docs/01_foundation/goldratt_choice_practice_v1.md`
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-022-goldratt-choice-practice.md`
+* `braincoach-docs/01_foundation/braincoach_thinking_os_practice_v1.md`
+* `braincoach-docs/01_foundation/operational_philosophy.md`
+
+---
+
+### DOTU And Sociology Foundation Intake Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-021 DOTU And Sociology Foundation Intake`
+
+Objective:
+
+Create a governed foundation intake path for DOTU and Sociology source material without changing canon and without moving source terminology directly into ontology or marketing.
+
+Outcome:
+
+* Added DOTU And Sociology Foundation Intake v1 under `01_foundation`.
+* Accepted DEC-021 as the governance decision.
+* Updated Operational Philosophy with the source intake rule.
+* Established top-down movement: Foundation -> Ontology Candidates -> Knowledge / Intelligence Objects -> Signal and Phenomenon Mapping -> Domain Models -> Marketing Translation -> Operations / GPS / Survey / Offer.
+* Established the model boundary rule: model is not the world; model is a map with a measure of approximation; terms describe processes, layers, regimes, and mechanisms, not labels for people.
+
+Explicit Non-Action:
+
+* Canon was not changed.
+* No accepted ontology terms were added.
+* No SQL was executed.
+* No migration was approved.
+* No books were imported wholesale into the repository.
+
+Artifacts:
+
+* `braincoach-docs/01_foundation/dotu_sociology_foundation_intake_v1.md`
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-021-dotu-sociology-foundation-intake.md`
+* `braincoach-docs/01_foundation/operational_philosophy.md`
+
+---
+
+### Thinking OS Adopted As Practice
+
+Status: Accepted
+
+Decision:
+
+`DEC-020 Thinking OS As Practice`
+
+Objective:
+
+Convert BrainCoach Thinking OS v1.0 from a theoretical framework document into the active thinking practice for BrainCoach humans, AI agents, workflows, and reviews.
+
+Outcome:
+
+* Added BrainCoach Thinking OS Practice v1 under `01_foundation`.
+* Accepted DEC-020 as the governance decision.
+* Updated Operational Philosophy with the Thinking OS practice rule.
+* Established the minimum sequence: DOTU Control Frame -> Sociological Context -> Constraint Detection -> Contradiction Detection -> Demand / Payment Trigger -> Signal / Phenomenon -> Decision -> Feedback.
+* Reinforced the current cycle rule: do not optimize non-constraints and do not convert a mechanism into an offer without checking payment trigger.
+
+Explicit Non-Action:
+
+* No SQL was executed.
+* No migration was approved.
+* No n8n workflow export was changed.
+* No new repository layer was created.
+
+Artifacts:
+
+* `braincoach-docs/01_foundation/braincoach_thinking_os_practice_v1.md`
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-020-thinking-os-as-practice.md`
+* `braincoach-docs/01_foundation/operational_philosophy.md`
+
+---
+
+### Payment Trigger Discovery Priority Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-019 Payment Trigger Discovery Priority`
+
+Objective:
+
+Shift the immediate BrainCoach constraint from content production and phenomenon expansion toward validation of the payment trigger.
+
+Accepted Constraint:
+
+```text
+Phenomenon
+↓
+Payment Trigger
+↓
+Offer
+```
+
+Outcome:
+
+* Added Strategy Journal 2026-06-18 as the planning artifact for the shift.
+* Updated Offer Discovery v1 with payment-story capture requirements.
+* Updated Market Discovery v1 with payment-trigger validation questions.
+* Reframed Summer Map as the future universal BrainCoach Discovery Engine.
+* Reframed GPS as early visibility into whether family investment converts into real progress.
+* Updated marketing/content rules from phenomenon-first to market-pain-first during offer validation.
+* Aligned Visual OS as a downstream visual meaning system whose input begins with market pain.
+* Added SJ-2026-06-18-002 clarification: Self Learning Capability is a mechanism, while the buyable-result hypothesis is trajectory stability without constant external management.
+
+Explicit Non-Action:
+
+* No SQL was executed.
+* No migration was approved.
+* No new PostgreSQL table was created.
+* No n8n workflow export was changed.
+
+Artifacts:
+
+* `braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-019-payment-trigger-discovery-priority.md`
+* `braincoach-docs/05_operations/10_planning/strategy_journal_2026_06_18_payment_trigger.md`
+* `braincoach-docs/05_operations/10_planning/offer_discovery_v1.md`
+* `braincoach-docs/05_operations/10_planning/market_discovery_v1.md`
+* `braincoach-docs/05_operations/13_runtime/summer_map_mvp_v1_state.md`
+* `braincoach-docs/04_domain/01 marketing/08_POSITIONING.md`
+* `braincoach-docs/04_domain/01 marketing/content_pillars_v2.md`
+
+---
+
 ## 2026-06-14
 
 ### Production OS Structure Normalization v1 Applied

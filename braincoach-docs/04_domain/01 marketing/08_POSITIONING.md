@@ -4,6 +4,8 @@ Status: Active
 
 Date: 2026-06-16
 
+Last Updated: 2026-06-18
+
 Layer: 04_domain/marketing
 
 ---
@@ -66,6 +68,17 @@ Sub-object:
 
 Self Learning Capability
 
+Commercial role:
+
+Self Learning Capability is a mechanism, not the buyable result.
+
+Buyable-result hypothesis:
+
+```text
+trajectory stability
+without constant external management
+```
+
 ---
 
 ## Market Hypothesis
@@ -91,3 +104,42 @@ Why didn't it work?
 Strategic implication:
 
 This segment has investment, visible events, risk of lost opportunity, and prior purchase behavior. If confirmed by interviews, it becomes the main Market Discovery refinement for Offer Discovery.
+
+## Payment Trigger Discovery
+
+Immediate commercial question:
+
+```text
+What transformation are parents already trying to buy?
+```
+
+The next validation cycle should prioritize payment stories over opinions.
+
+Strong evidence:
+
+* prior purchases;
+* meaningful spend;
+* failed or partial solutions;
+* last-straw moments;
+* fear of lost opportunity;
+* demand for earlier visibility before final results appear.
+
+GPS framing:
+
+BrainCoach GPS should be positioned as an early visibility instrument, not primarily as a tracker.
+
+Working formulation:
+
+```text
+How can parents understand whether their investment in a child is turning into real progress?
+```
+
+Mechanism-to-outcome translation:
+
+```text
+Self Learning Capability
+↓
+Reduced dependence on external management
+↓
+Trajectory stability
+```
