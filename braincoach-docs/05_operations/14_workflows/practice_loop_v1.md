@@ -49,6 +49,36 @@ Weekly Sprint artifact:
 
 `braincoach-docs/05_operations/14_workflows/weekly_sprint_v1.md`
 
+## Time Luck Principle
+
+Practice Loop treats time sense as a trainable capability.
+
+Founder formulation:
+
+```text
+Время везёт меня, когда я использую время и действую по плану.
+```
+
+In this practice, luck is not only an external event.
+
+Luck is the experienced effect of being in the right action at the right time.
+
+The tracker should therefore help train:
+
+* remembering the plan when the moment arrives;
+* feeling what action the current time is asking for;
+* acting inside the intended timing window;
+* noticing when stress narrows attention and erases the plan;
+* correcting the next sprint from timing deviations.
+
+Operational criterion:
+
+```text
+Can the user remember the plan and feel the right time for action even under stress?
+```
+
+This applies to breathing practice, stories, reels, production blocks, founder learning, client work, and recovery windows.
+
 ## Council Mode
 
 BrainCoach tracker should support the founder as if a methodological council were available nearby.

@@ -46,6 +46,18 @@ Execution feedback
 Correction
 ```
 
+Weekly Sprint also adopts the Time Luck principle:
+
+```text
+Время везёт меня, когда я использую время и действую по плану.
+```
+
+The system should treat timing adherence as a core effectiveness signal.
+
+The practical criterion is:
+
+Can the user remember the plan and act inside the right time window even under stress?
+
 ## Rules
 
 Agents should be able to transform tracker input into:
@@ -63,6 +75,8 @@ Agents should be able to transform tracker input into:
 If the user gives a content plan, agents should distribute it across the week and daily publishing slots.
 
 If the user gives a life or learning plan, agents should distribute it across fixed and flexible time windows.
+
+If the user gives a timed plan for routines, stories, reels, production blocks, learning, or recovery, agents should track planned time, actual time, timing status, and deviation.
 
 If a major event exists, such as a masterclass, agents must ask what preparation blocks are required before it.
 

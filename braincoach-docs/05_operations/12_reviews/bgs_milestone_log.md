@@ -296,3 +296,228 @@ Completed:
 Status:
 
 SUCCESS
+
+---
+
+## MILESTONE-011
+
+Title:
+
+BGS Orch Production MVP-1 Tables Installed
+
+Date:
+
+2026-06-18
+
+Completed:
+
+* Owner manually applied `007_bgs_orch_instagram_analytics_mvp1.sql` in `bgs_orch`
+* Owner manually applied `008_bgs_orch_weekly_content_automation_mvp1.sql` in `bgs_orch`
+* `production` schema confirmed live
+* 11 production tables confirmed
+* 37 constraints confirmed
+* 9 foreign keys confirmed
+* Smoke test inserted one weekly content plan and one linked content unit
+
+Tables:
+
+* `production.instagram_media_snapshots`
+* `production.instagram_comment_snapshots`
+* `production.instagram_comment_inbox_items`
+* `production.outcomes`
+* `production.weekly_content_plans`
+* `production.content_units`
+* `production.generated_content_assets`
+* `production.publishing_executions`
+* `production.content_outcomes`
+* `production.market_signals`
+* `production.tracker_monitoring_items`
+
+Safety:
+
+* `bgs_core` was not modified
+* n8n platform tables were not modified
+* No autopublishing or automatic public replies were enabled
+
+Final Review:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PRODUCTION_MVP1_FINAL_REVIEW.md`
+
+Status:
+
+SUCCESS
+
+---
+
+## MILESTONE-012
+
+Title:
+
+First Weekly Content Plan Seed Installed
+
+Date:
+
+2026-06-18
+
+Completed:
+
+* Owner manually applied `009_seed_weekly_content_plan_2026_06_22.sql` in `bgs_orch`
+* Weekly plan `CPLAN-2026-06-22-W01` confirmed for 2026-06-22 to 2026-06-28
+* Plan status confirmed as `draft`
+* 68 content units confirmed
+* Platform / format distribution confirmed
+* `publishing_scheduler_hypothesis` metadata confirmed as candidate weekly baseline
+
+Package:
+
+* Instagram: 4 Reels, 2 Carousels, 35 Stories
+* TikTok: 4 Shorts
+* YouTube Shorts: 4 Shorts
+* Threads: 7 units
+* Facebook: 5 Posts
+* Telegram: 7 Notes
+
+Safety:
+
+* No schema changes were made by seed 009
+* No autopublishing was enabled
+* The plan remains draft until generated assets and human approval exist
+
+Final Review:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PRODUCTION_MVP1_FINAL_REVIEW.md`
+
+Status:
+
+SUCCESS
+
+---
+
+## MILESTONE-013
+
+Title:
+
+BrainCoach Content Planning Became Production Pipeline
+
+Date:
+
+2026-06-18
+
+Completed:
+
+* Strategic observation accepted: BrainCoach moved from manual content planning to a content production system
+* Production path formalized as `Conversation -> Content -> Signal -> Knowledge`
+* Weekly production-cycle freeze adopted
+* `DEC-035-weekly-production-cycle-freeze.md` created
+* Monday Generator MVP identified as the next implementation step
+
+Pipeline:
+
+```text
+Weekly Strategy Brief
+->
+content_plan
+->
+content_units
+->
+generated_content_assets
+->
+review
+->
+publishing
+->
+signal_capture
+->
+knowledge_update
+```
+
+Rule:
+
+After weekly seed installation, do not change Weekly Brief, Channel Matrix, Scheduler, `content_plan`, or `content_units` until the week completes.
+
+Only the asset layer may change during the live week.
+
+Status:
+
+SUCCESS
+
+---
+
+## MILESTONE-014
+
+Title:
+
+First Generated Content Assets Seed Applied
+
+Date:
+
+2026-06-18
+
+Completed:
+
+* Owner manually applied `010_seed_generated_assets_2026_06_22_monday_mvp.sql` in `bgs_orch`
+* 11 Monday generated assets inserted into `production.generated_content_assets`
+* `monday_generated_assets = 11` confirmed
+* `voice_check_status = pending` confirmed for all 11 assets
+* `approval_status = pending` confirmed for all 11 assets
+
+Transition confirmed:
+
+```text
+content_units
+->
+generated_content_assets
+->
+human_review
+```
+
+Safety:
+
+* No schema changes were made by seed 010
+* No content units were changed
+* No generated asset was approved
+* No publishing execution was created
+* No autopublishing was enabled
+
+Status:
+
+SUCCESS
+
+---
+
+## MILESTONE-015
+
+Title:
+
+First Generated Asset Language Correction Applied
+
+Date:
+
+2026-06-18
+
+Completed:
+
+* Owner manually applied `011_update_monday_generated_assets_public_language_v1.sql` in `bgs_orch`
+* 4 Monday generated assets corrected for public-language fit
+* `corrected_assets = 4` confirmed
+* All 11 Monday generated assets remained `voice_check_status = pending`
+* All 11 Monday generated assets remained `approval_status = pending`
+
+Corrected:
+
+* `CUNIT-2026-06-22-IG-REEL-01`
+* `CUNIT-2026-06-22-IG-STORY-05`
+* `CUNIT-2026-06-22-THREADS-01`
+* `CUNIT-2026-06-22-TG-01`
+
+Safety:
+
+* No schema changes were made by seed 011
+* No content units were changed
+* No weekly structure was changed
+* No generated asset was approved
+* No autopublishing was enabled
+
+Status:
+
+SUCCESS

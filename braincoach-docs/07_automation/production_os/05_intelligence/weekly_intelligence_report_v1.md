@@ -32,6 +32,7 @@ The report may use:
 
 - new tracker entries;
 - observations;
+- structured practice entries;
 - research signal candidates;
 - Production Executions;
 - Production Outcomes;
@@ -59,6 +60,34 @@ Recommended report sections:
 - recommended research actions;
 - recommended content/research follow-up;
 - open questions for Season Review.
+
+When structured practice entries exist, especially founder routines tracked through Weekly Sprint, the report should include a `practice tracks` subsection.
+
+For Wim Hof breathing, the report should show:
+
+- number of sessions;
+- total practice time;
+- cycle counts;
+- exhale retention seconds per session;
+- best retention after exhale;
+- progression across the reporting period;
+- planned windows and confirmation deadlines;
+- on-time / late / missed / rescheduled counts;
+- repeated timing deviations;
+- state before / after practice if captured.
+
+Example:
+
+```text
+Practice Track: Wim Hof
+- sessions: 2
+- total time: 22 min
+- planned windows: 08:00 by 08:15, 18:00 by 18:15
+- timing: 1 on time, 1 late, 0 missed
+- exhale retentions: 45/60/75/90 sec; 40/60/80/95 sec
+- best retention after exhale: 95 sec
+- note: retention after exhale is the primary metric, not just total duration
+```
 
 ## Output
 

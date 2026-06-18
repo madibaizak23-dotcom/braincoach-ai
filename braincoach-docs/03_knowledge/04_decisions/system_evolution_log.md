@@ -1743,3 +1743,304 @@ Database impact:
 Outcome:
 
 MVP-1.1 is active as the current GPS production workflow. The primary pilot KPI is whether Reflection Coach increases observation volume per user by 20-30% compared with MVP-1.
+
+---
+
+### BGS Orch Production MVP-1 Tables Installed
+
+Date: 2026-06-18
+
+Status: Applied Manually By Owner
+
+Objective:
+
+Create the first live `bgs_orch.production` persistence layer for marketing/content automation, Instagram telemetry, production outcomes, market signals, and tracker monitoring.
+
+Applied migrations:
+
+* `braincoach-docs/07_automation/04_postgres/007_bgs_orch_instagram_analytics_mvp1.sql`
+* `braincoach-docs/07_automation/04_postgres/008_bgs_orch_weekly_content_automation_mvp1.sql`
+
+Live verification:
+
+* `current_database = bgs_orch`
+* `current_user = bgs_admin`
+* 11 `production` tables confirmed
+* 37 constraints confirmed
+* 9 foreign keys confirmed
+* Smoke test confirmed `weekly_content_plans -> content_units`
+
+Database impact:
+
+* New `production` schema active in `bgs_orch`
+* No `bgs_core` changes
+* No n8n platform/runtime table changes
+
+System impact:
+
+BrainCoach now has live production-process memory for:
+
+```text
+weekly content plan
+->
+content units
+->
+generated assets
+->
+publishing executions
+->
+outcomes
+->
+market signals
+->
+tracker monitoring
+```
+
+Final review:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PRODUCTION_MVP1_FINAL_REVIEW.md`
+
+Next step:
+
+Build `Weekly Package Generator MVP-1` in n8n against `bgs_orch.production`.
+
+---
+
+### First Weekly Content Plan Seed Installed
+
+Date: 2026-06-18
+
+Status: Applied Manually By Owner
+
+Objective:
+
+Load the first operational weekly content plan into `bgs_orch.production` for the week of 2026-06-22 to 2026-06-28.
+
+Applied seed:
+
+* `braincoach-docs/07_automation/04_postgres/009_seed_weekly_content_plan_2026_06_22.sql`
+
+Live verification:
+
+* `CPLAN-2026-06-22-W01` confirmed
+* status = `draft`
+* 68 `content_units` confirmed
+* platform / format distribution confirmed
+* `publishing_scheduler_hypothesis` metadata confirmed
+
+Content package shape:
+
+```text
+Instagram: 4 Reels, 2 Carousels, 35 Stories
+TikTok: 4 Shorts
+YouTube Shorts: 4 Shorts
+Threads: 7 units
+Facebook: 5 Posts
+Telegram: 7 Notes
+```
+
+System impact:
+
+BrainCoach now has a live weekly content plan object that agents and n8n workflows can use as the source of truth for generation, approval, publishing monitoring, signal capture, and weekly correction.
+
+Next step:
+
+Generate the first day package into `generated_content_assets`, then connect n8n to read from `content_units` and write generated draft assets.
+
+---
+
+### Content Planning Shifted To Production Pipeline
+
+Date: 2026-06-18
+
+Status: Accepted Strategic Observation
+
+Observation:
+
+BrainCoach has stopped merely planning content.
+
+BrainCoach has started planning a content system.
+
+Previous state:
+
+```text
+Idea of the week
+->
+discussion
+->
+manual content
+```
+
+New state:
+
+```text
+Weekly Strategy Brief
+->
+content_plan
+->
+content_units
+->
+generated_content_assets
+->
+review
+->
+publishing
+->
+signal_capture
+->
+knowledge_update
+```
+
+System meaning:
+
+This creates the missing operational link between:
+
+```text
+Research OS
+->
+Production OS
+->
+Knowledge OS
+```
+
+Production rule:
+
+After weekly seed installation, BrainCoach must not change the Weekly Brief, Channel Matrix, Scheduler, `content_plan`, or `content_units` until the week completes.
+
+Only `generated_content_assets`, text, visuals, CTA, and production notes may be edited during the live week.
+
+Next step:
+
+Build `Monday Generator MVP` for the first 11 Monday assets and review consistency before scaling generation to the remaining 57 weekly units.
+
+Related decision:
+
+`braincoach-docs/03_knowledge/04_decisions/decision-log/DEC-035-weekly-production-cycle-freeze.md`
+
+---
+
+### Monday Generator MVP Applied For Pilot Review
+
+Date: 2026-06-18
+
+Status: Applied Manually By Owner, Approved For Pilot Review, Not Published
+
+Observation:
+
+Seed `010_seed_generated_assets_2026_06_22_monday_mvp.sql` is the first object that completes:
+
+```text
+content_unit
+->
+generated_asset
+->
+human_review
+```
+
+It is not a template and not a schema migration.
+
+It is the first generated asset package produced from structured production data.
+
+Live installation:
+
+```text
+BEGIN
+DELETE 0
+INSERT 0 11
+COMMIT
+```
+
+Verification:
+
+```text
+monday_generated_assets = 11
+voice_check_status = pending
+approval_status = pending
+assets = 11
+```
+
+Safety:
+
+No asset was approved, scheduled, or published.
+
+Guardrail before mass generation:
+
+```text
+Main Conversation stays constant.
+Daily language changes.
+```
+
+Monday may use investment language heavily because it opens the weekly conversation.
+
+Tuesday and later generators must avoid repeating `вложения` as the dominant word.
+
+Public-language correction:
+
+Use `траектория` sparingly in public content.
+
+Prefer:
+
+* движение;
+* прогресс;
+* направление;
+* результат;
+* что держится в ребенке.
+
+Next step:
+
+Apply seed 010 manually, send the 11 Monday assets into Telegram Review, capture human corrections, and only then start Tuesday Generator.
+
+---
+
+### Monday Public-Language Correction Applied
+
+Date: 2026-06-18
+
+Status: Applied Manually By Owner
+
+Objective:
+
+Apply the first human-review correction to generated content assets without changing the weekly plan or content units.
+
+Applied seed:
+
+* `braincoach-docs/07_automation/04_postgres/011_update_monday_generated_assets_public_language_v1.sql`
+
+Live verification:
+
+```text
+corrected_assets = 4
+voice_check_status = pending
+approval_status = pending
+assets = 11
+```
+
+Corrected assets:
+
+* `CUNIT-2026-06-22-IG-REEL-01`
+* `CUNIT-2026-06-22-IG-STORY-05`
+* `CUNIT-2026-06-22-THREADS-01`
+* `CUNIT-2026-06-22-TG-01`
+
+Meaning:
+
+The system completed its first controlled correction inside the asset layer:
+
+```text
+generated_content_assets
+->
+human language review
+->
+corrected generated_content_assets
+```
+
+Weekly freeze remained intact:
+
+* no Weekly Brief changes;
+* no Channel Matrix changes;
+* no scheduler changes;
+* no `content_units` changes.
+
+Next step:
+
+Build Telegram Review MVP to move assets from SQL inspection into operator review.

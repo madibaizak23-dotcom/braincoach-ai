@@ -1,3 +1,214 @@
+## DEC-035 Weekly Production Cycle Freeze
+
+Date: 2026-06-18
+
+Decision:
+
+After a weekly content seed is installed, BrainCoach freezes the weekly structure until the end of that production cycle.
+
+Frozen objects:
+
+Weekly Strategy Brief, main conversation, main tension, main question, Channel Matrix, publishing scheduler hypothesis, `content_plan`, and `content_units`.
+
+Allowed changes:
+
+Only `generated_content_assets`, texts, scripts, visual briefs, CTA wording, and production notes may change during the live week.
+
+Reason:
+
+BrainCoach has moved from manual content planning to a production pipeline:
+
+Weekly Strategy Brief -> content_plan -> content_units -> generated_content_assets -> review -> publishing -> signal_capture -> knowledge_update.
+
+The first live week must collect signals under stable conditions instead of constantly improving the structure before it is tested.
+
+Status:
+
+Accepted
+
+Related:
+
+* Weekly Content Generation MVP-1
+* Weekly Content Automation Build Order
+* Cascading Content Generation
+* Weekly Content Plan Seed 2026-06-22
+
+## DEC-034 Cascading Content Generation
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Cascading Content Generation as the required process for weekly multi-channel content production.
+
+Agents must not generate all reels, stories, posts, and adaptations in one flat pass.
+
+Required flow:
+
+Week Intelligence -> Weekly Strategy -> Daily Map -> Channel Matrix -> Asset Generation -> Consistency QA -> Human Approval.
+
+Status:
+
+Accepted
+
+Related:
+
+* Cascading Content Generation Protocol v1
+* Weekly Content Generation MVP-1
+* Weekly Content Automation MVP-1 Build Plan
+* Marketing Agent Sync Protocol v1
+
+## DEC-033 Weekly Content Automation Build Order
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach will build Weekly Content Automation MVP-1 through Postgres production memory, n8n weekly package generation, Telegram weekly review, daily publishing monitor, execution / outcome capture, Tracker monitoring, and weekly correction report.
+
+SQL remains draft-only until explicit migration approval.
+
+Status:
+
+Accepted
+
+Related:
+
+* Weekly Content Automation MVP-1 Build Plan
+* Draft Weekly Content Automation MVP-1 SQL
+* Weekly Content Generation MVP-1
+* Marketing & Sales Automation MVP-1
+
+## DEC-032 Weekly Content Generation MVP-1
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach proceeds to Weekly Content Generation MVP-1.
+
+The MVP transforms one approved weekly strategy into a multi-channel production package with reels, stories, Threads, Facebook, Telegram, publishing windows, KPI, CTA, visual brief, and signal capture plan.
+
+Status:
+
+Accepted
+
+Related:
+
+* Weekly Content Generation MVP-1
+* Content Factory v2.0
+* Generation Module v1.0
+* Publishing Scheduler Hypothesis v1
+* Marketing & Sales Automation MVP-1
+
+## DEC-031 Marketing & Sales Automation MVP-1
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach proceeds to the first Marketing & Sales Automation MVP.
+
+MVP-1 starts with intelligence and routing, not blind publishing or automatic replies.
+
+Core loop:
+
+content response -> signal classification -> noise filtering -> payment trigger / lead candidate detection -> Telegram operator decision -> manual follow-up -> sales discovery outcome -> weekly correction.
+
+Status:
+
+Accepted
+
+Related:
+
+* Marketing & Sales Automation MVP-1
+* Instagram Intelligence Inbox MVP-1.5
+* Instagram Social Automation MVP-2 Plan
+* Offer Discovery v1
+* Automation Objective Control Principle v1
+
+## DEC-030 Automation As Objective Control System
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Automation as Objective Control System as the governing principle for its automation complex.
+
+The goal of automation is not to produce more content, tasks, reports, or agent outputs.
+
+The goal is to build an information system that objectively reflects current reality and helps move the system toward defined goals through feedback, correction, and improved control.
+
+Core formula:
+
+Goal -> current reality -> observable data -> interpretation -> constraint -> contradiction -> decision -> action -> measurement -> correction -> movement toward goal.
+
+Status:
+
+Accepted
+
+Related:
+
+* Automation Objective Control Principle v1
+* BrainCoach Thinking OS Practice v1
+* Operational Philosophy v2.0
+* Practice Loop v1
+* DEC-020 Thinking OS As Practice
+
+## DEC-029 Publishing Scheduler Hypothesis
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Publishing Scheduler Hypothesis as the planning layer for channel timing.
+
+External advice about best posting times may be used only as a candidate hypothesis.
+
+The scheduler must compare planned windows, actual publish times, and production outcomes before adapting.
+
+Publishing automation must start with reminders, approval cards, execution recording, and analytics feedback before any autopublishing.
+
+Weekly Content Plan is treated as a weekly hypothesis test: plan with time, publish, measure, correct, and reinforce repeated working windows.
+
+Status:
+
+Accepted
+
+Related:
+
+* Publishing Scheduler Hypothesis v1
+* Instagram Analytics MVP-1
+* Instagram Social Automation MVP-2 Plan
+* Weekly Sprint v1
+* Production Execution Specification v1
+
+## DEC-028 Marketing Intelligence Agent Sync
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts a Marketing Intelligence Agent Sync protocol.
+
+Perplexity research, founder conversations, market observations, content plans, production outcomes, and signal logs must move through the Knowledge OS before agents treat them as shared operational knowledge.
+
+The repository commit is the knowledge release boundary.
+
+After commit, push, and successful `knowledge_registry_sync_v1`, bots and agents may use committed artifacts as shared context if they can trace the claim to a repository source path.
+
+Status:
+
+Accepted
+
+Related:
+
+* Marketing Agent Sync Protocol v1
+* Knowledge Registry Sync v1
+* Agent Architecture v1.0
+* Production OS Canon v1
+* DEC-027 Production Visual Framing Layer
+
 ## DEC-027 Production Visual Framing Layer
 
 Date: 2026-06-18

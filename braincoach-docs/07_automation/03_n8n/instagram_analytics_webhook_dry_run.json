@@ -1,0 +1,300 @@
+{
+  "name": "instagram_analytics_webhook_dry_run",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "instagram-analytics-dry-run",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1120,
+        -120
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000001",
+      "name": "WH_InstagramAnalyticsDryRun",
+      "webhookId": "8aa8d540-dc7d-467f-8f6b-4f8e00000001"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        120
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000002",
+      "name": "TRG_DailySchedule"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v23.0/me/media",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,caption,media_type,permalink,timestamp,like_count,comments_count"
+            },
+            {
+              "name": "limit",
+              "value": "25"
+            },
+            {
+              "name": "access_token",
+              "value": "REPLACE_WITH_IG_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -820,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000003",
+      "name": "IG_ReadMedia"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json || {};\nconst media = Array.isArray(body.data) ? body.data : [];\nconst now = new Date();\nconst todayStart = new Date(now);\ntodayStart.setHours(0, 0, 0, 0);\nconst yesterdayStart = new Date(todayStart);\nyesterdayStart.setDate(yesterdayStart.getDate() - 1);\nconst tomorrowStart = new Date(todayStart);\ntomorrowStart.setDate(tomorrowStart.getDate() + 1);\n\nconst inWindow = media.filter(item => {\n  if (!item.timestamp) return true;\n  const published = new Date(item.timestamp);\n  return published >= yesterdayStart && published < tomorrowStart;\n});\nconst selected = inWindow.length > 0 ? inWindow : media.slice(0, 10);\n\nreturn selected.map(item => ({\n  json: {\n    instagram_media_id: item.id,\n    media: item,\n    collected_at: now.toISOString(),\n    fallback_window: inWindow.length === 0\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000004",
+      "name": "SYS_SplitMediaItems"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.instagram.com/v23.0/{{ $json.instagram_media_id }}/insights",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "metric",
+              "value": "views,reach,likes,comments,saved,shares,total_interactions"
+            },
+            {
+              "name": "access_token",
+              "value": "REPLACE_WITH_IG_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -300,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000005",
+      "name": "IG_ReadMediaInsights",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.instagram.com/v23.0/{{ $('SYS_SplitMediaItems').item.json.instagram_media_id }}/comments",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,text,username,timestamp,like_count"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            },
+            {
+              "name": "access_token",
+              "value": "REPLACE_WITH_IG_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000006",
+      "name": "IG_ReadMediaComments",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const mediaItem = $('SYS_SplitMediaItems').item.json;\nconst media = mediaItem.media || {};\nconst insightsPayload = $('IG_ReadMediaInsights').item.json || {};\nconst commentsPayload = $input.first().json || {};\nconst collectedAt = mediaItem.collected_at || new Date().toISOString();\n\nfunction metricValue(payload, names) {\n  const rows = Array.isArray(payload.data) ? payload.data : [];\n  for (const name of names) {\n    const row = rows.find(item => item.name === name);\n    const value = row?.values?.[0]?.value;\n    if (value !== undefined && value !== null) return Number(value);\n  }\n  return null;\n}\n\nfunction cleanText(value) {\n  return String(value || '').replace(/[\\r\\n\\t]+/g, ' ').replace(/\\s+/g, ' ').trim();\n}\n\nconst comments = Array.isArray(commentsPayload.data) ? commentsPayload.data : [];\nconst normalizedComments = comments.map(comment => ({\n  instagram_comment_id: comment.id,\n  instagram_media_id: media.id,\n  comment_text: cleanText(comment.text),\n  author_username: comment.username || null,\n  commented_at: comment.timestamp || null,\n  like_count: comment.like_count ?? null\n}));\n\nconst stopWords = new Set(['the','and','for','with','you','your','this','that','are','was','not','but','from','have','has','will','can','как','что','это','для','или','если','меня','только','очень','надо','нужно','без','его','она','они','мы','вы','не','на','в','и','а','но']);\nconst counts = new Map();\nfor (const comment of normalizedComments) {\n  for (const word of comment.comment_text.toLowerCase().replace(/[^\\p{L}\\p{N}\\s-]/gu, ' ').split(/\\s+/)) {\n    if (word.length < 4 || stopWords.has(word)) continue;\n    counts.set(word, (counts.get(word) || 0) + 1);\n  }\n}\nconst repeated = Array.from(counts.entries())\n  .filter(([, count]) => count > 1)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 10)\n  .map(([phrase, count]) => ({ phrase, count }));\n\nconst metrics = {\n  reach: metricValue(insightsPayload, ['reach']),\n  views: metricValue(insightsPayload, ['views', 'plays', 'impressions']),\n  likes: metricValue(insightsPayload, ['likes']) ?? (media.like_count ?? null),\n  comments: metricValue(insightsPayload, ['comments']) ?? (media.comments_count ?? normalizedComments.length),\n  saves: metricValue(insightsPayload, ['saved', 'saves']),\n  shares: metricValue(insightsPayload, ['shares']),\n  total_interactions: metricValue(insightsPayload, ['total_interactions'])\n};\n\nconst score = (metrics.reach || 0) + (metrics.views || 0) + ((metrics.likes || 0) * 3) + ((metrics.comments || 0) * 5) + ((metrics.saves || 0) * 6) + ((metrics.shares || 0) * 6);\n\nreturn [{\n  json: {\n    instagram_media_id: media.id,\n    media_type: media.media_type || null,\n    caption: media.caption || null,\n    permalink: media.permalink || null,\n    published_at: media.timestamp || null,\n    collected_at: collectedAt,\n    fallback_window: mediaItem.fallback_window || false,\n    metrics,\n    comments: normalizedComments,\n    repeated_phrase_candidates: repeated,\n    insights_available: Array.isArray(insightsPayload.data),\n    score,\n    dry_run: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000007",
+      "name": "SYS_NormalizeMediaOutcome"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(item => item.json || {});\nconst mediaItems = items.filter(item => item.instagram_media_id);\nconst now = new Date().toISOString();\n\nfunction n(value) {\n  return value === null || value === undefined ? 0 : Number(value);\n}\n\nfunction text(value, max = 90) {\n  const clean = String(value || 'untitled').replace(/[\\r\\n\\t]+/g, ' ').replace(/\\s+/g, ' ').trim();\n  return clean.length > max ? clean.slice(0, max - 3) + '...' : clean;\n}\n\nfunction contentLine(item) {\n  const m = item.metrics || {};\n  return '- ' + text(item.caption || item.permalink || item.instagram_media_id) + ' | score ' + n(item.score) + ' | likes ' + n(m.likes) + ', comments ' + n(m.comments) + ', saves ' + n(m.saves) + ', reach ' + n(m.reach) + ', views ' + n(m.views);\n}\n\nfunction escapeTelegramMarkdown(value) {\n  return String(value).replace(/([_*\\[\\]()~`>#+\\-=|{}.!])/g, '\\\\$1');\n}\n\nconst totals = mediaItems.reduce((acc, item) => {\n  const m = item.metrics || {};\n  acc.likes += n(m.likes);\n  acc.comments += n(m.comments);\n  acc.saves += n(m.saves);\n  acc.reach += n(m.reach);\n  acc.views += n(m.views);\n  acc.comment_rows += Array.isArray(item.comments) ? item.comments.length : 0;\n  acc.insights += item.insights_available ? 1 : 0;\n  return acc;\n}, { likes: 0, comments: 0, saves: 0, reach: 0, views: 0, comment_rows: 0, insights: 0 });\n\nconst top = [...mediaItems].sort((a, b) => n(b.score) - n(a.score)).slice(0, 3);\nconst under = [...mediaItems].sort((a, b) => n(a.score) - n(b.score)).slice(0, 2);\nconst phraseCounts = new Map();\nfor (const item of mediaItems) {\n  for (const phrase of item.repeated_phrase_candidates || []) {\n    phraseCounts.set(phrase.phrase, (phraseCounts.get(phrase.phrase) || 0) + n(phrase.count));\n  }\n}\nconst themes = Array.from(phraseCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([phrase, count]) => phrase + ' (' + count + ')');\nconst best = top[0];\nconst bestReason = best ? 'Best performer: ' + text(best.caption || best.permalink || best.instagram_media_id) + '.' : 'No media returned.';\nconst underReason = under.length ? 'Review weak hooks/CTA for: ' + under.map(item => text(item.caption || item.permalink || item.instagram_media_id, 45)).join('; ') + '.' : 'No underperformer yet.';\nconst marketSignal = themes.length ? 'Repeated comment language: ' + themes.join(', ') + '.' : 'Not enough repeated comment language yet.';\nconst nextAction = best ? 'Create the next post from the best-performing topic and ask for one concrete parent example.' : 'Publish one clear question-led post, then re-run analytics.';\nconst windowLabel = mediaItems.some(item => item.fallback_window) ? 'latest media fallback' : 'yesterday + today';\n\nconst lines = [\n  'BrainCoach Instagram Analytics MVP-1 DRY RUN',\n  now,\n  '',\n  'Window: ' + windowLabel,\n  '- media collected: ' + mediaItems.length,\n  '- media with insights: ' + totals.insights,\n  '- comment rows read: ' + totals.comment_rows,\n  '- likes: ' + totals.likes,\n  '- comments: ' + totals.comments,\n  '- saves: ' + totals.saves,\n  '- reach: ' + totals.reach,\n  '- views: ' + totals.views,\n  '',\n  '1. Top content',\n  ...(top.length ? top.map(contentLine) : ['- none']),\n  '',\n  '2. What performed best',\n  '- ' + bestReason,\n  '',\n  '3. What underperformed',\n  ...(under.length ? under.map(contentLine) : ['- none']),\n  '- ' + underReason,\n  '',\n  '4. Repeated comment themes',\n  '- ' + (themes.length ? themes.join(', ') : 'none'),\n  '',\n  '5. Possible market signals',\n  '- ' + marketSignal,\n  '',\n  '6. Recommended next content action',\n  '- ' + nextAction,\n  '',\n  'Boundary: dry-run/read-only. No DB writes. No public Instagram actions. No comments/replies publishing. No bgs_core writes.'\n];\n\nreturn [{\n  json: {\n    report_text: escapeTelegramMarkdown(lines.join('\\n')),\n    dry_run: true,\n    media_count: mediaItems.length,\n    comment_rows: totals.comment_rows\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000008",
+      "name": "SYS_BuildTelegramReport"
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.report_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        0
+      ],
+      "id": "75bb0c91-5a7f-409c-a6af-000000000009",
+      "name": "TG_SendInstagramReport",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CREDENTIAL_ID",
+          "name": "BrainCoach Intelligence Monitor"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WH_InstagramAnalyticsDryRun": {
+      "main": [
+        [
+          {
+            "node": "IG_ReadMedia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRG_DailySchedule": {
+      "main": [
+        [
+          {
+            "node": "IG_ReadMedia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG_ReadMedia": {
+      "main": [
+        [
+          {
+            "node": "SYS_SplitMediaItems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_SplitMediaItems": {
+      "main": [
+        [
+          {
+            "node": "IG_ReadMediaInsights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG_ReadMediaInsights": {
+      "main": [
+        [
+          {
+            "node": "IG_ReadMediaComments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG_ReadMediaComments": {
+      "main": [
+        [
+          {
+            "node": "SYS_NormalizeMediaOutcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_NormalizeMediaOutcome": {
+      "main": [
+        [
+          {
+            "node": "SYS_BuildTelegramReport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYS_BuildTelegramReport": {
+      "main": [
+        [
+          {
+            "node": "TG_SendInstagramReport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Qyzylorda"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-06-17T00:00:00.000Z",
+  "versionId": "75bb0c91-5a7f-409c-a6af-000000000010"
+}

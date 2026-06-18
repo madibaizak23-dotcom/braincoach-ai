@@ -1,0 +1,111 @@
+# BrainCoach BGS Runtime Facts
+
+## 2026-06-17: bgs-orchestrator-dev baseline
+
+- Active Cloud Run service: `bgs-orchestrator-dev`.
+- Region: `europe-west3`.
+- Public URL: `https://bgs-orchestrator-dev-936756379899.europe-west3.run.app`.
+- Runtime platform: n8n, pinned container version `docker.io/n8nio/n8n:2.22.5`.
+- Cloud Run HTTP/container port: `8080`.
+- PostgreSQL port: `5432`.
+- Cloud SQL instance: `braincoach-n8n-prod:europe-west3:n8n-db-instance`.
+- Cloud Run must use Cloud SQL connector socket host: `/cloudsql/braincoach-n8n-prod:europe-west3:n8n-db-instance`.
+- Do not use public IP `34.185.162.86` as `DB_POSTGRESDB_HOST` for this Cloud Run service.
+- n8n runtime database for BGS orchestration: `bgs_orch`.
+- n8n runtime database user: `bgs_admin`.
+- BGS human reality/application data database: `bgs_core`.
+- Summer Map v1.1 uses `bgs_core` tables: `persons`, `conversations`, `parent_interviews`, `interview_responses`, `conversation_events`, `messages`.
+- `bgs_core.conversations.chk_conversation_stage` must allow `waiting_q5`.
+- Validated on 2026-06-17: `bgs_core` constraint includes `waiting_q5`.
+- Validated on 2026-06-17: `bgs_orch` n8n runtime tables exist and contain data, including `workflow_entity`, `credentials_entity`, `user`, `project`, `settings`, and `migrations`.
+- Working Cloud Run DB env names for n8n are `DB_POSTGRESDB_POOL_SIZE`, `DB_POSTGRESDB_CONNECTION_TIMEOUT`, and `DB_POSTGRESDB_IDLE_CONNECTION_TIMEOUT`.
+- Avoid obsolete/incorrect env names `DB_POSTGRESDB_POOLSIZE` and `DB_POSTGRESDB_TIMEOUT`; n8n ignores or does not rely on them as intended.
+- `N8N_RUNNERS_ENABLED` was removed because n8n 2.22.5 logs it as deprecated/unneeded in this setup.
+- Current intended env baseline:
+  - `N8N_PROTOCOL=https`
+  - `N8N_PORT=8080`
+  - `N8N_DIAGNOSTICS_ENABLED=false`
+  - `DB_TYPE=postgresdb`
+  - `DB_POSTGRESDB_DATABASE=bgs_orch`
+  - `DB_POSTGRESDB_USER=bgs_admin`
+  - `DB_POSTGRESDB_HOST=/cloudsql/braincoach-n8n-prod:europe-west3:n8n-db-instance`
+  - `DB_POSTGRESDB_PORT=5432`
+  - `DB_POSTGRESDB_POOL_SIZE=2`
+  - `DB_POSTGRESDB_CONNECTION_TIMEOUT=120000`
+  - `DB_POSTGRESDB_IDLE_CONNECTION_TIMEOUT=120000`
+  - `DB_POSTGRESDB_SCHEMA=public`
+  - `N8N_HOST=bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+  - `WEBHOOK_URL=https://bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+  - `N8N_EDITOR_BASE_URL=https://bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+- Secrets are referenced through Secret Manager and should not be written into repo memory:
+  - `DB_POSTGRESDB_PASSWORD` from `bgs-admin-password`
+  - `N8N_ENCRYPTION_KEY` from `bgs-n8n-encryption-key`
+- Cloud Run should keep one instance for the dev runtime:
+  - `minScale=1`
+  - `maxScale=1`
+- CPU throttling should be disabled for this n8n service because n8n uses background DB pings, wait tracking, task broker, and cleanup work.
+- 2026-06-17 recovery sequence:
+  - Root cause initially included `DB_POSTGRESDB_HOST` accidentally set to public IP `34.185.162.86`.
+  - Host was restored to Cloud SQL socket path.
+  - Incorrect timeout/pool env names were replaced with official n8n env names.
+  - n8n UI became accessible again; screenshot showed the n8n Overview page with workflows loaded.
+- Current visible n8n UI state from 2026-06-17 screenshot:
+  - Page: `Overview`.
+  - Prod executions: `283`.
+  - Failed prod executions: `8`.
+  - Failure rate: `2.8%`.
+  - Average run time: `3.33s`.
+  - Total workflows visible count: `11`.
+  - Visible workflows include:
+    - `BrainCoach Summer Map v1.1 MVP` published, last updated 13 hours ago.
+    - `test BrainCoach Intelligence Snapshot MVP-1`.
+    - `BrainCoach Intelligence Monitor MVP-1.1`.
+    - `BrainCoach GPS MVP-1.1 — Reflection Coach Sandbox` published.
+    - `knowledge_registry_sync_v1` published.
+# 2026-06-17: bgs-orchestrator-dev candidate stable config
+
+- Canonical repository runtime snapshot: `braincoach-docs/07_automation/infrastructure/runtime_registry.md`.
+- Purpose: make n8n editor/runtime behavior more reliable and predictable during workflow activation, publishing, import, upload, and background execution.
+- Status: candidate baseline under real-world half-day observation. Treat this as the current starting point unless later evidence shows regressions.
+- Current candidate revision after tuning: `bgs-orchestrator-dev-00010-bhj`.
+- Reason for tuning:
+  - UI intermittently showed `Offline` a few seconds after refresh.
+  - User had only a short window to publish/import after refreshing.
+  - Fast deactivate/activate cycles previously correlated with browser disconnects and temporary `503 Database is not ready`, then recovery after several minutes.
+  - Logs showed DB pool and lifecycle instability patterns: `Database connection timed out`, `Database connection recovered`, `Cannot use a pool after calling end on the pool`, and task runner grant-token errors.
+- Cloud Run resource and lifecycle baseline:
+  - CPU throttling disabled: `run.googleapis.com/cpu-throttling=false`.
+  - Startup CPU boost enabled: `run.googleapis.com/startup-cpu-boost=true`.
+  - CPU limit: `2`.
+  - Memory limit: `2Gi`.
+  - Request timeout: `3600` seconds.
+  - Min instances: `1`.
+  - Max instances: `1`.
+  - Cloud SQL binding: `braincoach-n8n-prod:europe-west3:n8n-db-instance`.
+- Current tuned env baseline:
+  - `N8N_PROTOCOL=https`
+  - `N8N_PORT=8080`
+  - `N8N_DIAGNOSTICS_ENABLED=false`
+  - `DB_TYPE=postgresdb`
+  - `DB_POSTGRESDB_DATABASE=bgs_orch`
+  - `DB_POSTGRESDB_USER=bgs_admin`
+  - `DB_POSTGRESDB_HOST=/cloudsql/braincoach-n8n-prod:europe-west3:n8n-db-instance`
+  - `DB_POSTGRESDB_PORT=5432`
+  - `DB_POSTGRESDB_POOL_SIZE=10`
+  - `DB_POSTGRESDB_CONNECTION_TIMEOUT=300000`
+  - `DB_POSTGRESDB_IDLE_CONNECTION_TIMEOUT=300000`
+  - `DB_POSTGRESDB_SCHEMA=public`
+  - `N8N_RUNNERS_GRANT_TOKEN_TTL=600`
+  - `N8N_PUSH_BACKEND=sse`
+  - `N8N_HOST=bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+  - `WEBHOOK_URL=https://bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+  - `N8N_EDITOR_BASE_URL=https://bgs-orchestrator-dev-936756379899.europe-west3.run.app`
+- Current tuned config intentionally keeps:
+  - single Cloud Run instance, to avoid multi-instance n8n coordination issues in this dev runtime;
+  - always allocated CPU, because n8n uses background DB pings, wait tracking, task broker, and cleanup work;
+  - larger DB pool and timeouts, because editor activity plus activation/deactivation and cleanup can exceed a two-connection pool.
+- Do not revert to:
+  - public IP DB host `34.185.162.86`;
+  - `DB_POSTGRESDB_POOL_SIZE=2` unless diagnosing connection pressure;
+  - obsolete env names `DB_POSTGRESDB_POOLSIZE` / `DB_POSTGRESDB_TIMEOUT`;
+  - CPU throttling enabled for this n8n service.

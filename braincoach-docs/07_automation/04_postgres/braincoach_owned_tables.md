@@ -1,9 +1,9 @@
 # BrainCoach Owned Tables
 
 Status: Active DBA Rule
-Last Updated: 2026-06-14
+Last Updated: 2026-06-18
 Database: `braincoach_dev` legacy snapshot, `bgs_core`, `bgs_orch`
-Schema: `public`
+Schema: `public`, `production`
 
 ## Purpose
 
@@ -88,7 +88,7 @@ Live seed confirmation:
 
 ## BGS Orch-Owned Tables
 
-Current BrainCoach-owned `bgs_orch` tables confirmed live on 2026-06-13/2026-06-14: 3
+Current BrainCoach-owned `bgs_orch.public` tables confirmed live on 2026-06-13/2026-06-14: 3
 
 Full `bgs_orch.public` table inventory:
 
@@ -112,6 +112,54 @@ Schema confirmation:
 | `repository_journal` | BrainCoach / BGS Orch | persistent repository evolution journal |
 
 Future BrainCoach-owned tables must not be added to `bgs_orch.public` without a new accepted decision overriding DEC-017.
+
+### BGS Orch Production Tables
+
+Current BrainCoach-owned `bgs_orch.production` tables confirmed live on 2026-06-18: 11
+
+Final review:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PRODUCTION_MVP1_FINAL_REVIEW.md`
+
+Installed migrations:
+
+* `braincoach-docs/07_automation/04_postgres/007_bgs_orch_instagram_analytics_mvp1.sql`
+* `braincoach-docs/07_automation/04_postgres/008_bgs_orch_weekly_content_automation_mvp1.sql`
+
+Installed operational seed:
+
+* `braincoach-docs/07_automation/04_postgres/009_seed_weekly_content_plan_2026_06_22.sql`
+* `braincoach-docs/07_automation/04_postgres/010_seed_generated_assets_2026_06_22_monday_mvp.sql`
+* `braincoach-docs/07_automation/04_postgres/011_update_monday_generated_assets_public_language_v1.sql`
+
+Seed confirmation:
+
+* `CPLAN-2026-06-22-W01` installed as `draft`.
+* 68 `content_units` confirmed.
+* `publishing_scheduler_hypothesis` confirmed as candidate weekly baseline.
+* 11 Monday `generated_content_assets` confirmed.
+* All 11 Monday generated assets remain `pending / pending`.
+* 4 Monday generated assets corrected by public-language review while remaining `pending / pending`.
+
+| table | ownership | role |
+| --- | --- | --- |
+| `production.content_outcomes` | BrainCoach / BGS Orch | channel-specific outcome records linked to content units / executions |
+| `production.content_units` | BrainCoach / BGS Orch | planned content units by channel, format, date, KPI, CTA |
+| `production.generated_content_assets` | BrainCoach / BGS Orch | generated copy, scripts, and channel assets for content units |
+| `production.instagram_comment_inbox_items` | BrainCoach / BGS Orch | classified Instagram comment inbox items for operator review |
+| `production.instagram_comment_snapshots` | BrainCoach / BGS Orch | read-only Instagram comment snapshots |
+| `production.instagram_media_snapshots` | BrainCoach / BGS Orch | read-only Instagram media metric snapshots |
+| `production.market_signals` | BrainCoach / BGS Orch | classified marketing, offer, sales, objection, and risk signals |
+| `production.outcomes` | BrainCoach / BGS Orch | generic Instagram production outcome summaries |
+| `production.publishing_executions` | BrainCoach / BGS Orch | actual publishing execution records |
+| `production.tracker_monitoring_items` | BrainCoach / BGS Orch | monitoring items for Tracker / daily content control loop |
+| `production.weekly_content_plans` | BrainCoach / BGS Orch | weekly content plan root object |
+
+Safety:
+
+* No `bgs_core` tables were changed.
+* No n8n platform/runtime tables were changed.
+* No automatic public action was enabled.
 
 Live registry confirmation:
 

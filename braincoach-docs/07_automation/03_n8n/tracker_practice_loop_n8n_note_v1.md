@@ -75,6 +75,45 @@ weekly sprint
 
 The router should preserve the raw message before interpretation.
 
+## Structured Practice Capture
+
+Future n8n parsing should support structured practice facts, not only broad tracker notes.
+
+Wim Hof breathing must be recognized across common aliases:
+
+```text
+Wim Hof
+Вим Хофф
+Вимхов
+дыхание Вим Хоффа
+```
+
+Example input:
+
+```text
+сделал дыхание Вимхофф 4 цикла задержки в сек, 45. 60, 75 и 90, итого заняло 11 мин
+```
+
+Expected extraction:
+
+```json
+{
+  "is_activity_event": true,
+  "activity_type_code": "wim_hof_breathing",
+  "duration_minutes": 11,
+  "practice_type": "wim_hof_breathing",
+  "cycles": 4,
+  "exhale_retention_seconds": [45, 60, 75, 90],
+  "max_exhale_retention_seconds": 90
+}
+```
+
+Important:
+
+The core metric is retention after exhale. Total duration is secondary.
+
+Until `activity_types` contains `wim_hof_breathing`, the workflow should keep this as a tracker note / trajectory entry and not attempt an `activity_events` insert with an unknown activity type code.
+
 ## Practice Loop Mode
 
 When the user sends an idea, observation, contradiction, decision candidate, client signal, or market pain, n8n should support passing it to an AI step that returns:
@@ -138,6 +177,25 @@ The AI step should extract:
 * expected output;
 * feedback signal.
 
+Example recurring timed practice:
+
+```text
+Хочу делать Вим Хофф утром в 8 и вечером в 18. Если не записал до 08:15 или 18:15, трекер должен спросить и отметить отклонение.
+```
+
+Expected reminder candidate structure:
+
+```json
+{
+  "practice_type": "wim_hof_breathing",
+  "recurrence": "daily",
+  "planned_times": ["08:00", "18:00"],
+  "confirmation_deadlines": ["08:15", "18:15"],
+  "missed_action_prompt": "Сделал, перенести, сократить или пропустить?",
+  "weekly_review_tracking": true
+}
+```
+
 ## Reminder Direction
 
 Future n8n implementation may need a reminder layer.
@@ -157,6 +215,28 @@ Missed-action recovery language:
 ```text
 Reschedule, reduce, or drop?
 ```
+
+For timed practices, reminder automation should compare planned windows against captured tracker entries:
+
+```text
+planned practice
+->
+confirmation deadline
+->
+matching tracker entry found?
+->
+on_time / late / missed / rescheduled
+->
+weekly deviation summary
+```
+
+If no matching Wim Hof entry is captured by `08:15` or `18:15`, the tracker should send:
+
+```text
+Вим Хофф не закрыт. Сделал, перенести, сократить или пропустить?
+```
+
+If the user logs the practice after the deadline, the tracker should keep the practice facts and mark the timing status as `late`, including deviation minutes.
 
 No reminder automation is implemented yet.
 

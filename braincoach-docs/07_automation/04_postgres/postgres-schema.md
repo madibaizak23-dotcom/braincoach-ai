@@ -1,9 +1,9 @@
 # PostgreSQL Schema
 
 Status: Active DBA Snapshot
-Last Updated: 2026-06-16
+Last Updated: 2026-06-18
 Database: `braincoach_dev` legacy snapshot, `bgs_core`, `bgs_orch`
-Schema: `public`
+Schema: `public`, `production`
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Owner-provided live `bgs_orch` `\d` and `information_schema` confirmation.
 
 Status:
 
-Confirmed live on 2026-06-14. Codex did not query or modify PostgreSQL.
+Confirmed live on 2026-06-14 for `public` and 2026-06-18 for `production`. Codex did not query or modify PostgreSQL.
 
 Full table inventory:
 
@@ -48,11 +48,14 @@ Schemas:
 | schema | role |
 | --- | --- |
 | `public` | active application/runtime schema |
+| `production` | BrainCoach-owned production-process memory for marketing/content automation MVP-1 |
 | `information_schema` | PostgreSQL system schema |
 | `pg_catalog` | PostgreSQL system schema |
 | `pg_toast` | PostgreSQL system schema |
 
-Custom domain schemas such as `knowledge`, `research`, `production`, or `agent` do not exist yet in `bgs_orch`.
+Custom domain schemas such as `knowledge`, `research`, or `agent` do not exist yet in `bgs_orch`.
+
+The `production` schema now exists and contains BrainCoach-owned production-process memory tables installed manually by owner on 2026-06-18.
 
 Schema governance:
 
@@ -80,6 +83,82 @@ Confirmation note:
 `knowledge_assets` and `knowledge_events` were confirmed with live `\d` output. `repository_journal` was confirmed by the live `information_schema.tables` inventory; its column/index structure still requires separate `\d repository_journal` confirmation before any migration depends on it.
 
 The same `public` schema contains 97 total tables. Most are n8n platform/runtime tables such as `agents`, `execution_entity`, `credentials_entity`, `migrations`, `installed_nodes`, `chat_hub_*`, `instance_ai_*`, `workflow_*`, `project`, `user`, and related runtime tables. These are not BrainCoach-owned schema objects unless explicitly assigned later.
+
+### BGS Orch Production MVP-1 Snapshot
+
+Source:
+
+Owner-provided live `bgs_orch.production` verification after manually applying:
+
+* `braincoach-docs/07_automation/04_postgres/007_bgs_orch_instagram_analytics_mvp1.sql`
+* `braincoach-docs/07_automation/04_postgres/008_bgs_orch_weekly_content_automation_mvp1.sql`
+* `braincoach-docs/07_automation/04_postgres/009_seed_weekly_content_plan_2026_06_22.sql`
+* `braincoach-docs/07_automation/04_postgres/010_seed_generated_assets_2026_06_22_monday_mvp.sql`
+* `braincoach-docs/07_automation/04_postgres/011_update_monday_generated_assets_public_language_v1.sql`
+
+Final review:
+
+`braincoach-docs/07_automation/04_postgres/BGS_ORCH_PRODUCTION_MVP1_FINAL_REVIEW.md`
+
+Status:
+
+Applied manually by owner on 2026-06-18. Codex did not apply migrations.
+
+Live verification:
+
+* 11 tables confirmed in `production`.
+* 37 constraints confirmed.
+* 9 foreign keys confirmed.
+* Smoke test inserted one weekly plan and one linked content unit.
+* First weekly content plan seed confirmed 68 content units for `CPLAN-2026-06-22-W01`.
+* `publishing_scheduler_hypothesis` metadata confirmed as candidate weekly baseline.
+* Monday Generator MVP seed confirmed 11 `generated_content_assets`.
+* All Monday generated assets confirmed `voice_check_status = pending` and `approval_status = pending`.
+* Monday public-language correction confirmed 4 corrected assets, while all 11 assets remained pending / pending.
+
+| table | BrainCoach role |
+| --- | --- |
+| `production.instagram_media_snapshots` | read-only Instagram media metric snapshots |
+| `production.instagram_comment_snapshots` | read-only Instagram comment snapshots |
+| `production.instagram_comment_inbox_items` | classified Instagram comment inbox items |
+| `production.outcomes` | generic Instagram production outcome summaries |
+| `production.weekly_content_plans` | weekly content plan root object |
+| `production.content_units` | planned channel / format / date / KPI content units |
+| `production.generated_content_assets` | generated copy, scripts, and channel assets |
+| `production.publishing_executions` | actual publishing execution records |
+| `production.content_outcomes` | channel-specific outcomes linked to plans / executions |
+| `production.market_signals` | classified market, offer, sales, objection, and risk signals |
+| `production.tracker_monitoring_items` | monitoring items for Tracker and daily control loop |
+
+Confirmed relationship chain:
+
+```text
+weekly_content_plans
+->
+content_units
+->
+generated_content_assets
+
+content_units
+->
+publishing_executions
+->
+content_outcomes
+
+content_units / content_outcomes
+->
+market_signals
+
+weekly_content_plans / content_units
+->
+tracker_monitoring_items
+```
+
+Safety:
+
+* `bgs_core` was not changed.
+* n8n runtime tables were not changed.
+* No automatic public action was enabled.
 
 ## Current Inventory
 

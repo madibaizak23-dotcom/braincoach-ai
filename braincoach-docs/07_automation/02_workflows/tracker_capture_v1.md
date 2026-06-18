@@ -388,6 +388,42 @@ Current limitation:
 
 The workflow currently saves only `entry_type`; `tags` and `summary` are not persisted into `tracker_entries.metadata`.
 
+Future structured practice extraction:
+
+The tracker should recognize short personal practice entries even when the wording varies.
+
+Wim Hof breathing aliases:
+
+- `Wim Hof`
+- `Вим Хофф`
+- `Вимхов`
+- `дыхание Вим Хоффа`
+
+For Wim Hof breathing, the valuable metric is retention after exhale.
+
+Example raw input:
+
+```text
+сделал дыхание Вимхофф 4 цикла задержки в сек, 45. 60, 75 и 90, итого заняло 11 мин
+```
+
+Expected structured extraction:
+
+```json
+{
+  "entry_type": "note",
+  "tags": ["practice", "breathing", "wim_hof"],
+  "summary": "Wim Hof breathing, 4 cycles, 11 min",
+  "activity_type_code": "wim_hof_breathing",
+  "practice_type": "wim_hof_breathing",
+  "cycles": 4,
+  "exhale_retention_seconds": [45, 60, 75, 90],
+  "total_duration_minutes": 11
+}
+```
+
+This should remain separate from medical interpretation. The tracker records practice facts and subjective state only.
+
 ### `TRK_ParseEntry`
 
 Type: Code
