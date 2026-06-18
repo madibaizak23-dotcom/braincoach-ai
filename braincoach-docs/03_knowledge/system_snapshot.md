@@ -159,6 +159,46 @@ First Validated Signal Categories:
 
 ---
 
+# Knowledge Registry Sync
+
+Status:
+
+Active Sync Workflow
+
+Artifact:
+
+`braincoach-docs/07_automation/03_n8n/knowledge_registry_sync_v1.md`
+
+Workflow JSON:
+
+`braincoach-docs/07_automation/03_n8n/knowledge_registry_sync_v1.json`
+
+Current flow:
+
+```text
+GitHub Trigger
+->
+Knowledge Event Parser
+->
+Knowledge Event Store
+->
+Extract Assets
+->
+Knowledge Asset Store
+```
+
+Agent reliance rule:
+
+Agents may rely on prepared repository documents after the relevant commit is pushed, `knowledge_registry_sync_v1` executes successfully, and the relevant source paths are registered or updated in `knowledge_assets`.
+
+Unsynced local changes remain candidate context, not synced operational knowledge.
+
+Successful n8n executions are operational evidence that pushed repository updates can become available to the Knowledge Registry.
+
+Agents still need retrieval, prompt routing, or explicit context loading to use the relevant asset content during a task.
+
+---
+
 # Current Knowledge OS Structure
 
 00_canon
