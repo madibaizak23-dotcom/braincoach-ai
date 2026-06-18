@@ -131,6 +131,47 @@ Weekly Sprint can include personal routines, breathing exercises, son's study bl
 
 No actual reminder automation has been created yet.
 
+# Visual Framing
+
+Status:
+
+Active
+
+Decision:
+
+DEC-027 Production Visual Framing Layer
+
+Artifact:
+
+`braincoach-docs/04_domain/visual_meaning_system.md`
+
+BrainCoach adopts Navigation Universe as the master visual framing layer above existing Visual OS worlds.
+
+Core meaning:
+
+```text
+BrainCoach is a Human Development Navigation System.
+```
+
+Existing visual worlds remain active.
+
+Navigation Universe frames them through recurring recognition elements:
+
+* route;
+* path;
+* trajectory line;
+* checkpoint;
+* signal;
+* navigation marker;
+* direction arrow;
+* map;
+* coordinates;
+* dashboard;
+* tracker;
+* progress path.
+
+Agents must preserve human trajectories as primary and avoid drifting into generic notebooks, parks, dashboards, space metaphors, or study imagery.
+
 # Current Production System
 
 BrainCoach GPS MVP-1 — bgs_core adapted

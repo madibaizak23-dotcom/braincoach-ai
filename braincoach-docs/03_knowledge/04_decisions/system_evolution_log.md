@@ -10,6 +10,33 @@ Chronological record of major architectural decisions, milestones, discoveries, 
 
 ## 2026-06-18
 
+### Production Visual Framing Layer Accepted
+
+Status: Accepted
+
+Decision:
+
+`DEC-027 Production Visual Framing Layer`
+
+Objective:
+
+Reduce visual fragmentation risk by introducing a stable master visual framing layer above existing Visual OS worlds.
+
+Outcome:
+
+* Accepted Navigation Universe as BrainCoach Visual Master World.
+* Filled `visual_meaning_system.md` with the active visual framing rules.
+* Preserved existing visual worlds and visual modes.
+* Added recurring recognition elements such as route, path, trajectory line, checkpoint, signal, marker, map, coordinates, dashboard, tracker, and progress path.
+* Added weekly production planning rule: Main Conversation, Main Tension, Main Question, Primary Visual World, Master World.
+
+Explicit Non-Action:
+
+* Visual OS was not replaced.
+* The 7 Radical Color System was not replaced.
+* No new visual worlds were introduced.
+* No asset generation was performed.
+
 ### Weekly Sprint Accepted
 
 Status: Accepted

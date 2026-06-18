@@ -1,3 +1,43 @@
+## DEC-027 Production Visual Framing Layer
+
+Date: 2026-06-18
+
+Decision:
+
+BrainCoach adopts Navigation Universe as the master visual framing layer above existing Visual OS worlds.
+
+Navigation Universe becomes the umbrella layer for visual coherence.
+
+Existing visual worlds remain active.
+
+Core meaning:
+
+BrainCoach is a Human Development Navigation System.
+
+Most content units should include at least one navigation recognition element:
+
+* route
+* path
+* trajectory line
+* checkpoint
+* signal
+* navigation marker
+* direction arrow
+* map
+* coordinates
+* dashboard
+* tracker
+* progress path
+
+Status:
+
+Accepted
+
+Related:
+
+* Visual Meaning System v1
+* Visual World Principle v1.0
+
 ## DEC-026 Weekly Sprint
 
 Date: 2026-06-18
